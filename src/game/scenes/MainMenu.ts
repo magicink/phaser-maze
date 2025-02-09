@@ -7,6 +7,8 @@ export class MainMenu extends Scene {
   logo: GameObjects.Image
   title: GameObjects.Text
   logoTween: Phaser.Tweens.Tween | null
+  speed: number = 10
+  cursorKeys: Phaser.Types.Input.Keyboard.CursorKeys | null | undefined
 
   constructor() {
     super('MainMenu')
@@ -16,6 +18,12 @@ export class MainMenu extends Scene {
     this.background = this.add.image(512, 384, 'background')
 
     this.logo = this.add.image(512, 300, 'logo').setDepth(100)
+
+    // create cursor keys
+    if (this.input?.keyboard)
+      this.cursorKeys = this.input.keyboard.createCursorKeys()
+
+    console.log('this.cursorKeys', this.cursorKeys)
 
     this.title = this.add
       .text(512, 460, 'Main Menu', {
@@ -65,5 +73,27 @@ export class MainMenu extends Scene {
         }
       })
     }
+  }
+
+  handleKeyDown(cursorKey: Phaser.Input.Keyboard.Key) {
+    // handle cursor key press
+    if (cursorKey.keyCode === 37) {
+      // move left
+      this.logo.x -= this.speed
+    }
+    if (cursorKey.keyCode === 39) {
+      // move right
+      this.logo.x += this.speed
+    }
+    if (cursorKey.keyCode === 38) {
+      this.logo.y -= this.speed
+    }
+    if (cursorKey.keyCode === 40) {
+      this.logo.y += this.speed
+    }
+    this.speed += 5
+  }
+  handleKeyUp() {
+    this.speed = 10
   }
 }

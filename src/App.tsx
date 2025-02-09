@@ -1,4 +1,4 @@
-import { useRef, useState } from 'react'
+import React, { useRef, useState } from 'react'
 import { IRefPhaserGame, PhaserGame } from './game/PhaserGame'
 import { MainMenu } from './game/scenes/MainMenu'
 
@@ -32,6 +32,49 @@ function App() {
       }
     }
   }
+
+  React.useEffect(() => {
+    const handleKeyDown = (event: KeyboardEvent) => {
+      if (phaserRef.current) {
+        const scene = phaserRef.current.scene as MainMenu
+        if (
+          scene &&
+          scene.handleKeyDown &&
+          scene.scene.key === 'MainMenu' &&
+          scene.cursorKeys
+        ) {
+          if (event.key === 'ArrowRight') {
+            scene.handleKeyDown(scene.cursorKeys.right)
+          }
+          if (event.key === 'ArrowLeft') {
+            scene.handleKeyDown(scene.cursorKeys.left)
+          }
+          if (event.key === 'ArrowUp') {
+            scene.handleKeyDown(scene.cursorKeys.up)
+          }
+          if (event.key === 'ArrowDown') {
+            scene.handleKeyDown(scene.cursorKeys.down)
+          }
+        }
+      }
+    }
+    const handleKeyUp = (event: KeyboardEvent) => {
+      if (phaserRef.current) {
+        const scene = phaserRef.current.scene as MainMenu
+        if (scene && scene.handleKeyUp && scene.scene.key === 'MainMenu') {
+          scene.handleKeyUp()
+        }
+      }
+    }
+    // add event listener to handle keydown
+    document.addEventListener('keydown', handleKeyDown)
+    document.addEventListener('keyup', handleKeyUp)
+    return () => {
+      // remove event listener on cleanup
+      document.removeEventListener('keydown', handleKeyDown)
+      document.removeEventListener('keyup', handleKeyUp)
+    }
+  }, [])
 
   const addSprite = () => {
     if (phaserRef.current) {
@@ -71,15 +114,6 @@ function App() {
         <div>
           <button className='button' onClick={changeScene}>
             Change Scene
-          </button>
-        </div>
-        <div>
-          <button
-            disabled={canMoveSprite}
-            className='button'
-            onClick={moveSprite}
-          >
-            Toggle Movement
           </button>
         </div>
         <div className='spritePosition'>
