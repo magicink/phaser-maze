@@ -2,6 +2,7 @@ import Phaser from 'phaser'
 
 const GRID_SIZE = 16
 const COLOR_MAZE = 0x000000 // Black for maze outline
+const COLOR_END = 0x00aa00 // Green for end location highlight
 
 export class Maze {
   cols: number
@@ -15,12 +16,21 @@ export class Maze {
     this.scene = scene
     this.cols = Math.floor(width / GRID_SIZE)
     this.rows = Math.floor(height / GRID_SIZE)
+
     // Pick a random start cell
     this.start = {
       x: Math.floor(Math.random() * this.cols),
       y: Math.floor(Math.random() * this.rows)
     }
-    this.end = { x: this.cols - 1, y: this.rows - 1 }
+
+    // Pick a random end cell (different from start)
+    do {
+      this.end = {
+        x: Math.floor(Math.random() * this.cols),
+        y: Math.floor(Math.random() * this.rows)
+      }
+    } while (this.end.x === this.start.x && this.end.y === this.start.y) // Make sure start and end are different
+
     this.grid = this.generateMaze()
   }
 
@@ -101,6 +111,17 @@ export class Maze {
         }
       }
     }
+
+    // Highlight the end location with a green outline
+    graphics.lineStyle(3, COLOR_END, 1)
+    const endX = this.end.x * GRID_SIZE
+    const endY = this.end.y * GRID_SIZE
+    graphics.strokeRect(
+      endX + 2, // Add a small padding to make it visible inside the cell
+      endY + 2,
+      GRID_SIZE - 4, // Subtract padding from both sides
+      GRID_SIZE - 4
+    )
   }
 
   getStart() {
