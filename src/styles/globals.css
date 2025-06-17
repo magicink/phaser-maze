@@ -1,0 +1,23 @@
+html, body {
+  margin: 0;
+  padding: 0;
+  overflow: hidden;
+  width: 100vw;
+  height: 100vh;
+  box-sizing: border-box;
+}
+
+#game-container {
+  width: 100vw;
+  height: 100vh;
+  overflow: hidden;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+#game-container > canvas {
+  display: block;
+  margin: 0 auto;
+  box-shadow: 0 2px 16px rgba(0,0,0,0.08);
+}
