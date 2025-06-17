@@ -24,7 +24,7 @@ export class GameManager {
   public incrementSteps(): void {
     this.stepCount++
     // Emit an event with the updated step count
-    EventBus.emit('step-count-updated', this.stepCount)
+    EventBus.emit(EVENT_STEP_COUNT_UPDATED, this.stepCount)
   }
 
   /**
