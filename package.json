@@ -33,7 +33,7 @@
   },
   "prettier": "@brandontom/prettier",
   "dependencies": {
-    "next": "15.1.2",
+    "next": "15.2.4",
     "phaser": "^3.87.0",
     "react": "^18",
     "react-dom": "^18"
