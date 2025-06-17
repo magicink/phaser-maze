@@ -1,6 +1,7 @@
 import Phaser from 'phaser'
 import { Player } from './Player'
 import { Maze } from './Maze'
+import { GameManager } from './GameManager'
 
 const GRID_SIZE = 16
 const COLOR_BG = 0xf8f9fa // Very light grey
@@ -22,6 +23,8 @@ export class GridScene extends Phaser.Scene {
     if (maze && player) {
       player.setPositionByCell(maze.getStart())
     }
+    // Reset step count when initializing the scene
+    GameManager.getInstance().resetSteps()
     this.scale.on('resize', this.handleResize, this)
   }
 
@@ -74,6 +77,8 @@ export class GridScene extends Phaser.Scene {
     if (maze && player) {
       player.setPositionByCell(maze.getStart())
     }
+    // Reset step count when resizing as this creates a new maze
+    GameManager.getInstance().resetSteps()
   }
 
   create() {

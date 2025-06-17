@@ -1,4 +1,5 @@
 import Phaser from 'phaser'
+import { GameManager } from './GameManager'
 
 const GRID_SIZE = 16
 const COLOR_PLAYER = 0x1952a6 // Dark blue for player
@@ -59,6 +60,8 @@ export class Player {
     const newY = this.cell.y + dy
     if (maze && maze.isMoveAllowed(this.cell.x, this.cell.y, dx, dy)) {
       this.setCell({ x: newX, y: newY })
+      // Increment step count when a valid move is made
+      GameManager.getInstance().incrementSteps()
     }
   }
 
