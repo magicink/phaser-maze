@@ -1,6 +1,7 @@
 import React, { useRef, useState, useEffect } from 'react'
 import { IRefPhaserGame, PhaserGame } from './game/PhaserGame'
 import { EventBus } from './lib/shared/EventBus'
+import { EVENT_STEP_COUNT_UPDATED } from './lib/shared/EventBusEvents'
 
 function App() {
   const phaserRef = useRef<IRefPhaserGame | null>(null)
@@ -12,11 +13,11 @@ function App() {
       setStepCount(count)
     }
 
-    EventBus.on('step-count-updated', handleStepCountUpdate)
+    EventBus.on(EVENT_STEP_COUNT_UPDATED, handleStepCountUpdate)
 
     // Clean up the event listener when component unmounts
     return () => {
-      EventBus.removeListener('step-count-updated', handleStepCountUpdate)
+      EventBus.removeListener(EVENT_STEP_COUNT_UPDATED, handleStepCountUpdate)
     }
   }, [])
 
