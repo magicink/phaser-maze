@@ -33,7 +33,7 @@ export class GameManager {
   public resetSteps(): void {
     this.stepCount = 0
     // Emit an event with the reset step count
-    EventBus.emit('step-count-updated', this.stepCount)
+    EventBus.emit(EVENT_STEP_COUNT_UPDATED, this.stepCount)
   }
 
   /**
