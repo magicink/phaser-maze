@@ -1,4 +1,5 @@
 import { EventBus } from '@/lib/shared/EventBus'
+import { EVENT_STEP_COUNT_UPDATED } from '@/lib/shared/EventBusEvents'
 
 export class GameManager {
   private static instance: GameManager
