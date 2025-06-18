@@ -12,19 +12,46 @@ export class Maze {
   scene: Phaser.Scene
   start: { x: number; y: number } = { x: 0, y: 0 }
   end: { x: number; y: number }
-  fillPercentage: number // How much of the grid should be filled
+  totalCells: number // How many cells should be used in the maze
 
   constructor(
     scene: Phaser.Scene,
     width: number,
     height: number,
-    fillPercentage: number = 100
+    totalCells: number = 0
   ) {
     this.scene = scene
-    this.cols = Math.floor(width / GRID_SIZE)
-    this.rows = Math.floor(height / GRID_SIZE)
-    // Clamp fillPercentage between 30 and 100
-    this.fillPercentage = Math.min(100, Math.max(30, fillPercentage))
+
+    // Calculate maximum possible cols and rows based on board dimensions
+    const maxCols = Math.floor(width / GRID_SIZE)
+    const maxRows = Math.floor(height / GRID_SIZE)
+    const maxCells = maxCols * maxRows
+
+    // If totalCells is 0 or not provided, use all cells
+    this.totalCells =
+      totalCells <= 0 ? maxCells : Math.min(totalCells, maxCells)
+
+    // Calculate dimensions based on totalCells
+    if (this.totalCells >= maxCells) {
+      // If using all cells, use maximum dimensions
+      this.cols = maxCols
+      this.rows = maxRows
+    } else {
+      // Calculate dimensions to approximate a square shape
+      // while respecting the aspect ratio of the board
+      const aspectRatio = maxCols / maxRows
+      this.rows = Math.floor(Math.sqrt(this.totalCells / aspectRatio))
+      this.cols = Math.floor(this.totalCells / this.rows)
+
+      // Adjust if we didn't get exactly the right number of cells
+      if (this.cols * this.rows < this.totalCells) {
+        this.cols += 1
+      }
+
+      // Ensure we don't exceed the maximum dimensions
+      this.cols = Math.min(this.cols, maxCols)
+      this.rows = Math.min(this.rows, maxRows)
+    }
 
     // Pick a random start cell
     this.start = {
@@ -176,13 +203,11 @@ export class Maze {
     // Start carving from the start position
     carve(this.start.x, this.start.y)
 
-    // If fillPercentage is less than 100, create partial maze
-    if (this.fillPercentage < 100) {
-      // Calculate how many cells to keep
-      const totalCells = cols * rows
-      const targetCellCount = Math.floor(
-        (totalCells * this.fillPercentage) / 100
-      )
+    // If totalCells is less than the maximum, create partial maze
+    const maxCells = cols * rows
+    if (this.totalCells < maxCells) {
+      // Use the specified number of cells
+      const targetCellCount = this.totalCells
       let currentCellCount = 0
 
       // Count cells that are already part of the maze
@@ -299,72 +324,98 @@ export class Maze {
     for (let y = 0; y < this.rows; y++) {
       for (let x = 0; x < this.cols; x++) {
         const cell = this.grid[y][x]
-        const px = x * GRID_SIZE
-        const py = y * GRID_SIZE
+
         // Top wall
-        if ((cell & 1) === 0) {
+        if (!(cell & 1)) {
           graphics.beginPath()
-          graphics.moveTo(px, py)
-          graphics.lineTo(px + GRID_SIZE, py)
+          graphics.moveTo(x * GRID_SIZE, y * GRID_SIZE)
+          graphics.lineTo((x + 1) * GRID_SIZE, y * GRID_SIZE)
           graphics.strokePath()
         }
+
         // Right wall
-        if ((cell & 2) === 0) {
+        if (!(cell & 2)) {
           graphics.beginPath()
-          graphics.moveTo(px + GRID_SIZE, py)
-          graphics.lineTo(px + GRID_SIZE, py + GRID_SIZE)
+          graphics.moveTo((x + 1) * GRID_SIZE, y * GRID_SIZE)
+          graphics.lineTo((x + 1) * GRID_SIZE, (y + 1) * GRID_SIZE)
           graphics.strokePath()
         }
+
         // Bottom wall
-        if ((cell & 4) === 0) {
+        if (!(cell & 4)) {
           graphics.beginPath()
-          graphics.moveTo(px, py + GRID_SIZE)
-          graphics.lineTo(px + GRID_SIZE, py + GRID_SIZE)
+          graphics.moveTo(x * GRID_SIZE, (y + 1) * GRID_SIZE)
+          graphics.lineTo((x + 1) * GRID_SIZE, (y + 1) * GRID_SIZE)
           graphics.strokePath()
         }
+
         // Left wall
-        if ((cell & 8) === 0) {
+        if (!(cell & 8)) {
           graphics.beginPath()
-          graphics.moveTo(px, py)
-          graphics.lineTo(px, py + GRID_SIZE)
+          graphics.moveTo(x * GRID_SIZE, y * GRID_SIZE)
+          graphics.lineTo(x * GRID_SIZE, (y + 1) * GRID_SIZE)
           graphics.strokePath()
         }
       }
     }
 
-    // Highlight the end location with a green outline
-    graphics.lineStyle(3, COLOR_END, 1)
-    const endX = this.end.x * GRID_SIZE
-    const endY = this.end.y * GRID_SIZE
-    graphics.strokeRect(
-      endX + 2, // Add a small padding to make it visible inside the cell
-      endY + 2,
-      GRID_SIZE - 4, // Subtract padding from both sides
-      GRID_SIZE - 4
+    // Highlight the end point
+    graphics.fillStyle(COLOR_END)
+    graphics.fillRect(
+      this.end.x * GRID_SIZE + GRID_SIZE / 4,
+      this.end.y * GRID_SIZE + GRID_SIZE / 4,
+      GRID_SIZE / 2,
+      GRID_SIZE / 2
     )
   }
 
-  getStart() {
+  // Helper to check if a cell is valid
+  isValidCell(x: number, y: number): boolean {
+    return x >= 0 && x < this.cols && y >= 0 && y < this.rows
+  }
+
+  // Helper to check if a wall exists between two cells
+  hasWall(fromX: number, fromY: number, toX: number, toY: number): boolean {
+    // Make sure we're moving to an adjacent cell
+    if (Math.abs(fromX - toX) + Math.abs(fromY - toY) !== 1) {
+      return true
+    }
+
+    // Check for walls in each direction
+    if (toX > fromX) {
+      // Moving right, check for right wall
+      return !(this.grid[fromY][fromX] & 2)
+    } else if (toX < fromX) {
+      // Moving left, check for left wall
+      return !(this.grid[fromY][fromX] & 8)
+    } else if (toY > fromY) {
+      // Moving down, check for bottom wall
+      return !(this.grid[fromY][fromX] & 4)
+    } else {
+      // Moving up, check for top wall
+      return !(this.grid[fromY][fromX] & 1)
+    }
+  }
+
+  getStart(): { x: number; y: number } {
     return this.start
   }
-  getEnd() {
+
+  getEnd(): { x: number; y: number } {
     return this.end
   }
 
+  // Check if a move from (x,y) by (dx,dy) is allowed
   isMoveAllowed(x: number, y: number, dx: number, dy: number): boolean {
-    // Directions: 0=top, 1=right, 2=bottom, 3=left
-    let dir: number | undefined = undefined
-    if (dx === 0 && dy === -1)
-      dir = 0 // up
-    else if (dx === 1 && dy === 0)
-      dir = 1 // right
-    else if (dx === 0 && dy === 1)
-      dir = 2 // down
-    else if (dx === -1 && dy === 0) dir = 3 // left
-    if (dir === undefined) return false
-    const cell = this.grid[y]?.[x]
-    if (cell === undefined) return false
-    // If the wall in the direction is open, allow move
-    return (cell & (1 << dir)) !== 0
+    const newX = x + dx
+    const newY = y + dy
+
+    // First check if the target cell is valid
+    if (!this.isValidCell(newX, newY)) {
+      return false
+    }
+
+    // Then check if there's no wall between the cells
+    return !this.hasWall(x, y, newX, newY)
   }
 }

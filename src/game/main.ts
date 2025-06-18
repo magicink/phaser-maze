@@ -1,5 +1,6 @@
 import { AUTO, Game } from 'phaser'
 import { GridScene } from './GridScene'
+import { MazeScene } from './MazeScene'
 
 //  Find out more information about the Game Config at:
 //  https://newdocs.phaser.io/docs/3.70.0/Phaser.Types.Core.GameConfig
@@ -9,7 +10,7 @@ const config: Phaser.Types.Core.GameConfig = {
   height: 720, // Fixed height for modern screens
   parent: 'game-container',
   backgroundColor: '#f8f9fa', // Very light grey
-  scene: [GridScene]
+  scene: [GridScene, MazeScene]
 }
 
 const StartGame = (parent: string) => {

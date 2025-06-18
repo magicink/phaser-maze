@@ -1,49 +1,16 @@
 import Phaser from 'phaser'
-import { Player } from './Player'
-import { Maze } from './Maze'
-import { GameManager } from './GameManager'
-import { EventBus } from '@/lib/shared/EventBus'
-import { EVENT_LEVEL_UPDATED } from '@/lib/shared/EventBusEvents'
 
 const GRID_SIZE = 16
 const COLOR_BG = 0xf8f9fa // Very light grey
 const COLOR_GRID = 0xc7d6e6 // Light bluish grey, darker than COLOR_BG
-const MIN_FILL_PERCENTAGE = 50 // Minimum fill percentage for mazes
-const MAX_FILL_PERCENTAGE = 90 // Maximum fill percentage for mazes
-
-let player: Player | null = null
-let maze: Maze | null = null
 
 export class GridScene extends Phaser.Scene {
   constructor() {
     super({ key: 'GridScene' })
   }
 
-  // Helper method to generate a random fill percentage
-  getRandomFillPercentage(): number {
-    return (
-      Math.floor(
-        Math.random() * (MAX_FILL_PERCENTAGE - MIN_FILL_PERCENTAGE + 1)
-      ) + MIN_FILL_PERCENTAGE
-    )
-  }
-
   init() {
     this.drawGrid()
-    // Create maze with random fill percentage
-    maze = new Maze(
-      this,
-      this.scale.width,
-      this.scale.height,
-      this.getRandomFillPercentage()
-    )
-    maze.render()
-    player = new Player(this)
-    if (maze && player) {
-      player.setPositionByCell(maze.getStart())
-    }
-    // Reset step count when initializing the scene
-    GameManager.getInstance().resetSteps()
     this.scale.on('resize', this.handleResize, this)
   }
 
@@ -88,42 +55,16 @@ export class GridScene extends Phaser.Scene {
   }
 
   handleResize(gameSize: Phaser.Structs.Size) {
-    this.cameras.main.setSize(gameSize.width, gameSize.height)
-    this.drawGrid()
-    // Create maze with random fill percentage
-    maze = new Maze(
-      this,
-      this.scale.width,
-      this.scale.height,
-      this.getRandomFillPercentage()
-    )
-    maze.render()
-    if (player) player.redraw()
-    if (maze && player) {
-      player.setPositionByCell(maze.getStart())
-    }
-    // Reset step count when resizing as this creates a new maze
-    GameManager.getInstance().resetSteps()
+    // this.cameras.main.setSize(gameSize.width, gameSize.height)
+    // this.drawGrid()
   }
 
   create() {
-    if (!this.input || !this.input.keyboard) return
-    this.input.keyboard.on('keydown', (event: KeyboardEvent) => {
-      if (!player || !maze) return
-      switch (event.key) {
-        case 'ArrowUp':
-          player.moveBy(0, -1, maze)
-          break
-        case 'ArrowDown':
-          player.moveBy(0, 1, maze)
-          break
-        case 'ArrowLeft':
-          player.moveBy(-1, 0, maze)
-          break
-        case 'ArrowRight':
-          player.moveBy(1, 0, maze)
-          break
-      }
-    })
+    // Start the MazeScene which will overlay on top of this scene
+    this.scene.launch('MazeScene')
+  }
+
+  update() {
+    // Nothing to do here since we only draw the grid
   }
 }
