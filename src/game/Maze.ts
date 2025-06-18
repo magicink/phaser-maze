@@ -1,6 +1,6 @@
 import Phaser from 'phaser'
 import { COLOR_EMPTY, COLOR_END, COLOR_MAZE, GRID_SIZE } from './constants'
-import { MazeShapes } from '../lib/maze/MazeShapes'
+import { MazeShapes } from '@/lib/maze/MazeShapes'
 
 export class Maze {
   cols: number
@@ -336,8 +336,6 @@ export class Maze {
     const isPartOfMaze = Array.from({ length: rows }, () =>
       Array(cols).fill(false)
     )
-    const stack: [number, number][] = []
-
     const DX = [0, 1, 0, -1]
     const DY = [-1, 0, 1, 0]
 
