@@ -18,7 +18,7 @@ export class MazeScene extends Phaser.Scene {
       this,
       this.scale.width,
       this.scale.height,
-      200 // Using more cells for better shape visibility
+      400 // Using more cells for better shape visibility
     )
     maze.render()
     player = new Player(this)
@@ -37,7 +37,7 @@ export class MazeScene extends Phaser.Scene {
       this,
       this.scale.width,
       this.scale.height,
-      200 // Using more cells for better shape visibility
+      400 // Using more cells for better shape visibility
     )
     maze.render()
     if (player) player.redraw()
