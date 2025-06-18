@@ -27,7 +27,7 @@ export class MazeShapes {
 
     for (let y = 0; y < rows; y++) {
       for (let x = 0; x < cols; x++) {
-        // Calculate distance from center with some noise
+        // Calculate distance from the center with some noise
         const dx = x - centerX
         const dy = y - centerY
         const distance = Math.sqrt(dx * dx + dy * dy)
@@ -35,7 +35,7 @@ export class MazeShapes {
         // Add some noise to create an irregular blob
         const noise = Math.random() * radius * 0.3
 
-        // Include cell if it's within the noisy radius
+        // Include cell if it's within a noisy radius
         if (distance <= radius + noise) {
           cellsInShape[y][x] = true
         }
@@ -211,26 +211,26 @@ export class MazeShapes {
     const numProtrusions = Math.floor(Math.random() * 5) + 3
     for (let i = 0; i < numProtrusions; i++) {
       const angle = Math.random() * 2 * Math.PI
-      const protrustionLength = radius * (Math.random() * 0.5 + 0.5)
-      const protrustionWidth = radius * (Math.random() * 0.3 + 0.1)
+      const protrusionLength = radius * (Math.random() * 0.5 + 0.5)
+      const protrusionWidth = radius * (Math.random() * 0.3 + 0.1)
 
       const dirX = Math.cos(angle)
       const dirY = Math.sin(angle)
 
-      for (let j = 0; j < protrustionLength; j++) {
+      for (let j = 0; j < protrusionLength; j++) {
         const x = Math.floor(centerX + dirX * j)
         const y = Math.floor(centerY + dirY * j)
 
         if (x >= 0 && x < cols && y >= 0 && y < rows) {
           // Add cells around the protrusion line
-          for (let dx = -protrustionWidth; dx <= protrustionWidth; dx++) {
-            for (let dy = -protrustionWidth; dy <= protrustionWidth; dy++) {
+          for (let dx = -protrusionWidth; dx <= protrusionWidth; dx++) {
+            for (let dy = -protrusionWidth; dy <= protrusionWidth; dy++) {
               const nx = Math.floor(x + dx)
               const ny = Math.floor(y + dy)
 
               if (nx >= 0 && nx < cols && ny >= 0 && ny < rows) {
                 const distToLine = Math.abs(dx * dirY - dy * dirX)
-                if (distToLine <= protrustionWidth) {
+                if (distToLine <= protrusionWidth) {
                   cellsInShape[ny][nx] = true
                 }
               }
@@ -241,5 +241,79 @@ export class MazeShapes {
     }
 
     return cellsInShape
+  }
+
+  /**
+   * Expand a maze shape to reach the target cell count
+   * @param cellsInShape Current shape as 2D boolean array
+   * @param rows Number of rows in the grid
+   * @param cols Number of columns in the grid
+   * @param targetCellCount Target number of cells in the shape
+   * @returns The expanded shape as a 2D boolean array
+   */
+  static expandShape(
+    cellsInShape: boolean[][],
+    rows: number,
+    cols: number,
+    targetCellCount: number
+  ): boolean[][] {
+    // Create a copy of the input array to avoid modifying the original
+    const result = cellsInShape.map(row => [...row])
+
+    const DX = [0, 1, 0, -1, 1, 1, -1, -1]
+    const DY = [-1, 0, 1, 0, -1, 1, 1, -1]
+
+    // Count current cells in shape
+    const countCellsInShape = (): number => {
+      let count = 0
+      for (let y = 0; y < rows; y++) {
+        for (let x = 0; x < cols; x++) {
+          if (result[y][x]) {
+            count++
+          }
+        }
+      }
+      return count
+    }
+
+    while (countCellsInShape() < targetCellCount) {
+      const borderCells: [number, number][] = []
+
+      // Find cells at the border of the shape
+      for (let y = 0; y < rows; y++) {
+        for (let x = 0; x < cols; x++) {
+          if (!result[y][x]) {
+            // Check if this cell is adjacent to a shape cell
+            for (let dir = 0; dir < 8; dir++) {
+              const nx = x + DX[dir]
+              const ny = y + DY[dir]
+
+              if (
+                nx >= 0 &&
+                nx < cols &&
+                ny >= 0 &&
+                ny < rows &&
+                result[ny][nx]
+              ) {
+                borderCells.push([x, y])
+                break
+              }
+            }
+          }
+        }
+      }
+
+      if (borderCells.length === 0) break
+
+      // Add a random border cell to the shape
+      const idx = Math.floor(Math.random() * borderCells.length)
+      const [x, y] = borderCells[idx]
+      result[y][x] = true
+
+      // Stop if we've added enough cells
+      if (countCellsInShape() >= targetCellCount) break
+    }
+
+    return result
   }
 }

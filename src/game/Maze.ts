@@ -167,46 +167,13 @@ export class Maze {
 
   // Expand the shape to reach the target cell count
   expandShape(targetCellCount: number) {
-    const DX = [0, 1, 0, -1, 1, 1, -1, -1]
-    const DY = [-1, 0, 1, 0, -1, 1, 1, -1]
-
-    while (this.countCellsInShape() < targetCellCount) {
-      const borderCells: [number, number][] = []
-
-      // Find cells at the border of the shape
-      for (let y = 0; y < this.rows; y++) {
-        for (let x = 0; x < this.cols; x++) {
-          if (!this.cellsInShape[y][x]) {
-            // Check if this cell is adjacent to a shape cell
-            for (let dir = 0; dir < 8; dir++) {
-              const nx = x + DX[dir]
-              const ny = y + DY[dir]
-
-              if (
-                nx >= 0 &&
-                nx < this.cols &&
-                ny >= 0 &&
-                ny < this.rows &&
-                this.cellsInShape[ny][nx]
-              ) {
-                borderCells.push([x, y])
-                break
-              }
-            }
-          }
-        }
-      }
-
-      if (borderCells.length === 0) break
-
-      // Add a random border cell to the shape
-      const idx = Math.floor(Math.random() * borderCells.length)
-      const [x, y] = borderCells[idx]
-      this.cellsInShape[y][x] = true
-
-      // Stop if we've added enough cells
-      if (this.countCellsInShape() >= targetCellCount) break
-    }
+    // Use MazeShapes.expandShape to expand the shape
+    this.cellsInShape = MazeShapes.expandShape(
+      this.cellsInShape,
+      this.rows,
+      this.cols,
+      targetCellCount
+    )
   }
 
   // Shrink the shape to reach the target cell count
