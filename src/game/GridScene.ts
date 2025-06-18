@@ -11,7 +11,6 @@ export class GridScene extends Phaser.Scene {
 
   init() {
     this.drawGrid()
-    this.scale.on('resize', this.handleResize, this)
   }
 
   drawGrid() {
@@ -54,17 +53,8 @@ export class GridScene extends Phaser.Scene {
     }
   }
 
-  handleResize(gameSize: Phaser.Structs.Size) {
-    // this.cameras.main.setSize(gameSize.width, gameSize.height)
-    // this.drawGrid()
-  }
-
   create() {
     // Start the MazeScene which will overlay on top of this scene
     this.scene.launch('MazeScene')
-  }
-
-  update() {
-    // Nothing to do here since we only draw the grid
   }
 }

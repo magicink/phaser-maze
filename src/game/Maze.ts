@@ -1,9 +1,6 @@
 import Phaser from 'phaser'
-
-const GRID_SIZE = 16
-const COLOR_MAZE = 0x000000 // Black for maze outline
-const COLOR_END = 0x00aa00 // Green for end location highlight
-const COLOR_EMPTY = 0xcccccc // Light gray for empty cells
+import { COLOR_EMPTY, COLOR_END, COLOR_MAZE, GRID_SIZE } from './constants'
+import { MazeShapes } from '../lib/maze/MazeShapes'
 
 export class Maze {
   cols: number
@@ -94,23 +91,53 @@ export class Maze {
     const targetRadius = Math.sqrt(this.totalCells / Math.PI)
     const radius = Math.min(targetRadius, maxRadius)
 
-    // Generate the selected shape
+    // Generate the selected shape using the MazeShapes library
     switch (shapeType) {
       case 'blob':
-        this.generateBlobShape(centerX, centerY, radius)
+        this.cellsInShape = MazeShapes.generateBlobShape(
+          this.rows,
+          this.cols,
+          centerX,
+          centerY,
+          radius
+        )
         break
       case 'parabola':
-        this.generateParabolaShape(centerX, centerY, radius)
+        this.cellsInShape = MazeShapes.generateParabolaShape(
+          this.rows,
+          this.cols,
+          centerX,
+          centerY,
+          radius
+        )
         break
       case 'heart':
-        this.generateHeartShape(centerX, centerY, radius)
+        this.cellsInShape = MazeShapes.generateHeartShape(
+          this.rows,
+          this.cols,
+          centerX,
+          centerY,
+          radius
+        )
         break
       case 'spiral':
-        this.generateSpiralShape(centerX, centerY, radius)
+        this.cellsInShape = MazeShapes.generateSpiralShape(
+          this.rows,
+          this.cols,
+          centerX,
+          centerY,
+          radius
+        )
         break
       case 'random':
       default:
-        this.generateRandomShape(centerX, centerY, radius)
+        this.cellsInShape = MazeShapes.generateRandomShape(
+          this.rows,
+          this.cols,
+          centerX,
+          centerY,
+          radius
+        )
         break
     }
 
@@ -122,147 +149,6 @@ export class Maze {
     } else if (cellsInShape > this.totalCells * 1.2) {
       // If we have too many cells, shrink the shape
       this.shrinkShape(this.totalCells)
-    }
-  }
-
-  // Generate a blob-like shape (irregular circle)
-  generateBlobShape(centerX: number, centerY: number, radius: number) {
-    for (let y = 0; y < this.rows; y++) {
-      for (let x = 0; x < this.cols; x++) {
-        // Calculate distance from center with some noise
-        const dx = x - centerX
-        const dy = y - centerY
-        const distance = Math.sqrt(dx * dx + dy * dy)
-
-        // Add some noise to create an irregular blob
-        const noise = Math.random() * radius * 0.3
-
-        // Include cell if it's within the noisy radius
-        if (distance <= radius + noise) {
-          this.cellsInShape[y][x] = true
-        }
-      }
-    }
-  }
-
-  // Generate a parabola shape
-  generateParabolaShape(centerX: number, centerY: number, radius: number) {
-    const a = 1 / (2 * radius) // Parabola coefficient
-
-    for (let y = 0; y < this.rows; y++) {
-      for (let x = 0; x < this.cols; x++) {
-        // Parabola equation: y = a(x - h)² + k
-        // We're using an inverted parabola: y = -a(x - h)² + k + 2*radius
-        const dx = x - centerX
-        const expectedY = -a * dx * dx + centerY + radius
-
-        // Include cells that are below the parabola curve
-        if (y >= centerY - radius && y <= expectedY) {
-          this.cellsInShape[y][x] = true
-        }
-      }
-    }
-  }
-
-  // Generate a heart shape
-  generateHeartShape(centerX: number, centerY: number, radius: number) {
-    const scale = radius / 2
-
-    for (let y = 0; y < this.rows; y++) {
-      for (let x = 0; x < this.cols; x++) {
-        // Normalize coordinates to [-2, 2] range
-        const nx = (x - centerX) / scale
-        const ny = (y - centerY) / scale
-
-        // Heart curve equation: (x²+y²-1)³ - x²y³ < 0
-        if (
-          Math.pow(nx * nx + ny * ny - 1, 3) - nx * nx * Math.pow(ny, 3) <
-          0
-        ) {
-          this.cellsInShape[y][x] = true
-        }
-      }
-    }
-  }
-
-  // Generate a spiral shape
-  generateSpiralShape(centerX: number, centerY: number, radius: number) {
-    const maxRadius = radius
-    const turns = 2 // Number of spiral turns
-
-    for (let y = 0; y < this.rows; y++) {
-      for (let x = 0; x < this.cols; x++) {
-        const dx = x - centerX
-        const dy = y - centerY
-
-        // Convert to polar coordinates
-        const distance = Math.sqrt(dx * dx + dy * dy)
-        let angle = Math.atan2(dy, dx)
-        if (angle < 0) angle += 2 * Math.PI
-
-        // Spiral equation: r = a + bθ
-        const a = 0
-        const b = maxRadius / (2 * Math.PI * turns)
-        const spiralRadius = a + b * angle
-
-        // Include cell if it's close to the spiral curve
-        const tolerance = (b * Math.PI) / 4
-        if (
-          Math.abs(distance - spiralRadius) <= tolerance &&
-          distance <= maxRadius
-        ) {
-          this.cellsInShape[y][x] = true
-        }
-      }
-    }
-  }
-
-  // Generate a random shape
-  generateRandomShape(centerX: number, centerY: number, radius: number) {
-    // Start with a circle
-    for (let y = 0; y < this.rows; y++) {
-      for (let x = 0; x < this.cols; x++) {
-        const dx = x - centerX
-        const dy = y - centerY
-        const distance = Math.sqrt(dx * dx + dy * dy)
-
-        if (distance <= radius) {
-          this.cellsInShape[y][x] = true
-        }
-      }
-    }
-
-    // Add random protrusions
-    const numProtrusions = Math.floor(Math.random() * 5) + 3
-    for (let i = 0; i < numProtrusions; i++) {
-      const angle = Math.random() * 2 * Math.PI
-      const protrustionLength = radius * (Math.random() * 0.5 + 0.5)
-      const protrustionWidth = radius * (Math.random() * 0.3 + 0.1)
-
-      const dirX = Math.cos(angle)
-      const dirY = Math.sin(angle)
-
-      for (let j = 0; j < protrustionLength; j++) {
-        const x = Math.floor(centerX + dirX * j)
-        const y = Math.floor(centerY + dirY * j)
-
-        if (x >= 0 && x < this.cols && y >= 0 && y < this.rows) {
-          // Add cells around the protrusion line
-          for (let dx = -protrustionWidth; dx <= protrustionWidth; dx++) {
-            for (let dy = -protrustionWidth; dy <= protrustionWidth; dy++) {
-              const nx = Math.floor(x + dx)
-              const ny = Math.floor(y + dy)
-
-              if (nx >= 0 && nx < this.cols && ny >= 0 && ny < this.rows) {
-                const distToLine = Math.abs(dx * dirY - dy * dirX)
-                if (distToLine <= protrustionWidth) {
-                  this.cellsInShape[ny][nx] = true
-                }
-              }
-            }
-          }
-        }
-      }
     }
   }
 

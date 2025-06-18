@@ -1,9 +1,7 @@
 import Phaser from 'phaser'
 import { GameManager } from './GameManager'
 import { Maze } from './Maze'
-
-const GRID_SIZE = 16
-const COLOR_PLAYER = 0x1952a6 // Dark blue for player
+import { COLOR_PLAYER, GRID_SIZE } from '@/game/constants'
 
 export class Player {
   rect: Phaser.GameObjects.Rectangle | null = null
