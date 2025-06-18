@@ -945,6 +945,31 @@ export class Maze {
       }
     }
 
+    // Ensure the exit cell is inside a valid cell
+    if (!this.isValidCell(this.end.x, this.end.y)) {
+      console.log('Exit cell is not valid, finding a new one...')
+
+      // Get valid cells that are part of the shape
+      const validCells = this.getValidCellsInShape()
+
+      if (validCells.length > 0) {
+        // Pick a random valid cell different from the start
+        const validExits = validCells.filter(
+          cell => !(cell.x === this.start.x && cell.y === this.start.y)
+        )
+
+        if (validExits.length > 0) {
+          const exitIdx = Math.floor(Math.random() * validExits.length)
+          this.end = { ...validExits[exitIdx] }
+        } else if (validCells.length > 0) {
+          // If no valid cells other than start, just pick any valid cell
+          // (not ideal but better than an invalid exit)
+          const exitIdx = Math.floor(Math.random() * validCells.length)
+          this.end = { ...validCells[exitIdx] }
+        }
+      }
+    }
+
     return maze
   }
 
