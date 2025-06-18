@@ -13,12 +13,12 @@ export class MazeScene extends Phaser.Scene {
   }
 
   init() {
-    // Create maze with fixed number of cells
+    // Create maze with more cells to make shapes visible
     maze = new Maze(
       this,
       this.scale.width,
       this.scale.height,
-      10 // Using a fixed value of 100 cells
+      200 // Using more cells for better shape visibility
     )
     maze.render()
     player = new Player(this)
@@ -32,12 +32,12 @@ export class MazeScene extends Phaser.Scene {
 
   handleResize(gameSize: Phaser.Structs.Size) {
     this.cameras.main.setSize(gameSize.width, gameSize.height)
-    // Create maze with fixed number of cells
+    // Create maze with more cells to make shapes visible
     maze = new Maze(
       this,
       this.scale.width,
       this.scale.height,
-      10 // Using a fixed value of 100 cells
+      200 // Using more cells for better shape visibility
     )
     maze.render()
     if (player) player.redraw()

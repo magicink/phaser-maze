@@ -11,8 +11,9 @@ export class Maze {
   grid: number[][]
   scene: Phaser.Scene
   start: { x: number; y: number } = { x: 0, y: 0 }
-  end: { x: number; y: number }
+  end: { x: number; y: number } = { x: 0, y: 0 }
   totalCells: number // How many cells should be used in the maze
+  cellsInShape: boolean[][] // Tracks which cells are part of the chosen shape
 
   constructor(
     scene: Phaser.Scene,
@@ -31,43 +32,364 @@ export class Maze {
     this.totalCells =
       totalCells <= 0 ? maxCells : Math.min(totalCells, maxCells)
 
-    // Calculate dimensions based on totalCells
-    if (this.totalCells >= maxCells) {
-      // If using all cells, use maximum dimensions
-      this.cols = maxCols
-      this.rows = maxRows
+    // Always use the maximum dimensions for the grid
+    this.cols = maxCols
+    this.rows = maxRows
+
+    // Initialize the cellsInShape array with all cells set to false
+    this.cellsInShape = Array.from({ length: this.rows }, () =>
+      Array(this.cols).fill(false)
+    )
+
+    // Generate a shape for the maze
+    this.generateShape()
+
+    // Pick a random start cell within the shape
+    const validCells = this.getValidCellsInShape()
+    if (validCells.length === 0) {
+      // Fallback if no valid cells in shape (shouldn't happen)
+      this.start = {
+        x: Math.floor(this.cols / 2),
+        y: Math.floor(this.rows / 2)
+      }
+      this.cellsInShape[this.start.y][this.start.x] = true
     } else {
-      // Calculate dimensions to approximate a square shape
-      // while respecting the aspect ratio of the board
-      const aspectRatio = maxCols / maxRows
-      this.rows = Math.floor(Math.sqrt(this.totalCells / aspectRatio))
-      this.cols = Math.floor(this.totalCells / this.rows)
-
-      // Adjust if we didn't get exactly the right number of cells
-      if (this.cols * this.rows < this.totalCells) {
-        this.cols += 1
-      }
-
-      // Ensure we don't exceed the maximum dimensions
-      this.cols = Math.min(this.cols, maxCols)
-      this.rows = Math.min(this.rows, maxRows)
+      const startIdx = Math.floor(Math.random() * validCells.length)
+      this.start = { ...validCells[startIdx] }
     }
 
-    // Pick a random start cell
-    this.start = {
-      x: Math.floor(Math.random() * this.cols),
-      y: Math.floor(Math.random() * this.rows)
-    }
+    // Pick a random end cell within the shape (different from start)
+    const endCandidates = validCells.filter(
+      cell => !(cell.x === this.start.x && cell.y === this.start.y)
+    )
 
-    // Pick a random end cell (different from start)
-    do {
+    if (endCandidates.length === 0) {
+      // Fallback if no other valid cells (shouldn't happen)
       this.end = {
-        x: Math.floor(Math.random() * this.cols),
-        y: Math.floor(Math.random() * this.rows)
+        x: this.start.x === 0 ? 1 : this.start.x - 1,
+        y: this.start.y
       }
-    } while (this.end.x === this.start.x && this.end.y === this.start.y) // Make sure start and end are different
+      this.cellsInShape[this.end.y][this.end.x] = true
+    } else {
+      const endIdx = Math.floor(Math.random() * endCandidates.length)
+      this.end = { ...endCandidates[endIdx] }
+    }
 
     this.grid = this.generateMaze()
+  }
+
+  // Generate a shape for the maze
+  generateShape() {
+    // Randomly choose a shape type
+    const shapeTypes = ['blob', 'parabola', 'random', 'heart', 'spiral']
+    const shapeType = shapeTypes[Math.floor(Math.random() * shapeTypes.length)]
+
+    // Calculate center of the grid
+    const centerX = Math.floor(this.cols / 2)
+    const centerY = Math.floor(this.rows / 2)
+
+    // Calculate the size of the shape based on totalCells
+    // We want to ensure we have approximately totalCells cells in the shape
+    const maxRadius = Math.min(this.cols, this.rows) / 2
+    const targetRadius = Math.sqrt(this.totalCells / Math.PI)
+    const radius = Math.min(targetRadius, maxRadius)
+
+    // Generate the selected shape
+    switch (shapeType) {
+      case 'blob':
+        this.generateBlobShape(centerX, centerY, radius)
+        break
+      case 'parabola':
+        this.generateParabolaShape(centerX, centerY, radius)
+        break
+      case 'heart':
+        this.generateHeartShape(centerX, centerY, radius)
+        break
+      case 'spiral':
+        this.generateSpiralShape(centerX, centerY, radius)
+        break
+      case 'random':
+      default:
+        this.generateRandomShape(centerX, centerY, radius)
+        break
+    }
+
+    // Ensure we have enough cells in the shape
+    const cellsInShape = this.countCellsInShape()
+    if (cellsInShape < this.totalCells * 0.8) {
+      // If we have too few cells, expand the shape
+      this.expandShape(this.totalCells)
+    } else if (cellsInShape > this.totalCells * 1.2) {
+      // If we have too many cells, shrink the shape
+      this.shrinkShape(this.totalCells)
+    }
+  }
+
+  // Generate a blob-like shape (irregular circle)
+  generateBlobShape(centerX: number, centerY: number, radius: number) {
+    for (let y = 0; y < this.rows; y++) {
+      for (let x = 0; x < this.cols; x++) {
+        // Calculate distance from center with some noise
+        const dx = x - centerX
+        const dy = y - centerY
+        const distance = Math.sqrt(dx * dx + dy * dy)
+
+        // Add some noise to create an irregular blob
+        const noise = Math.random() * radius * 0.3
+
+        // Include cell if it's within the noisy radius
+        if (distance <= radius + noise) {
+          this.cellsInShape[y][x] = true
+        }
+      }
+    }
+  }
+
+  // Generate a parabola shape
+  generateParabolaShape(centerX: number, centerY: number, radius: number) {
+    const a = 1 / (2 * radius) // Parabola coefficient
+
+    for (let y = 0; y < this.rows; y++) {
+      for (let x = 0; x < this.cols; x++) {
+        // Parabola equation: y = a(x - h)² + k
+        // We're using an inverted parabola: y = -a(x - h)² + k + 2*radius
+        const dx = x - centerX
+        const expectedY = -a * dx * dx + centerY + radius
+
+        // Include cells that are below the parabola curve
+        if (y >= centerY - radius && y <= expectedY) {
+          this.cellsInShape[y][x] = true
+        }
+      }
+    }
+  }
+
+  // Generate a heart shape
+  generateHeartShape(centerX: number, centerY: number, radius: number) {
+    const scale = radius / 2
+
+    for (let y = 0; y < this.rows; y++) {
+      for (let x = 0; x < this.cols; x++) {
+        // Normalize coordinates to [-2, 2] range
+        const nx = (x - centerX) / scale
+        const ny = (y - centerY) / scale
+
+        // Heart curve equation: (x²+y²-1)³ - x²y³ < 0
+        if (
+          Math.pow(nx * nx + ny * ny - 1, 3) - nx * nx * Math.pow(ny, 3) <
+          0
+        ) {
+          this.cellsInShape[y][x] = true
+        }
+      }
+    }
+  }
+
+  // Generate a spiral shape
+  generateSpiralShape(centerX: number, centerY: number, radius: number) {
+    const maxRadius = radius
+    const turns = 2 // Number of spiral turns
+
+    for (let y = 0; y < this.rows; y++) {
+      for (let x = 0; x < this.cols; x++) {
+        const dx = x - centerX
+        const dy = y - centerY
+
+        // Convert to polar coordinates
+        const distance = Math.sqrt(dx * dx + dy * dy)
+        let angle = Math.atan2(dy, dx)
+        if (angle < 0) angle += 2 * Math.PI
+
+        // Spiral equation: r = a + bθ
+        const a = 0
+        const b = maxRadius / (2 * Math.PI * turns)
+        const spiralRadius = a + b * angle
+
+        // Include cell if it's close to the spiral curve
+        const tolerance = (b * Math.PI) / 4
+        if (
+          Math.abs(distance - spiralRadius) <= tolerance &&
+          distance <= maxRadius
+        ) {
+          this.cellsInShape[y][x] = true
+        }
+      }
+    }
+  }
+
+  // Generate a random shape
+  generateRandomShape(centerX: number, centerY: number, radius: number) {
+    // Start with a circle
+    for (let y = 0; y < this.rows; y++) {
+      for (let x = 0; x < this.cols; x++) {
+        const dx = x - centerX
+        const dy = y - centerY
+        const distance = Math.sqrt(dx * dx + dy * dy)
+
+        if (distance <= radius) {
+          this.cellsInShape[y][x] = true
+        }
+      }
+    }
+
+    // Add random protrusions
+    const numProtrusions = Math.floor(Math.random() * 5) + 3
+    for (let i = 0; i < numProtrusions; i++) {
+      const angle = Math.random() * 2 * Math.PI
+      const protrustionLength = radius * (Math.random() * 0.5 + 0.5)
+      const protrustionWidth = radius * (Math.random() * 0.3 + 0.1)
+
+      const dirX = Math.cos(angle)
+      const dirY = Math.sin(angle)
+
+      for (let j = 0; j < protrustionLength; j++) {
+        const x = Math.floor(centerX + dirX * j)
+        const y = Math.floor(centerY + dirY * j)
+
+        if (x >= 0 && x < this.cols && y >= 0 && y < this.rows) {
+          // Add cells around the protrusion line
+          for (let dx = -protrustionWidth; dx <= protrustionWidth; dx++) {
+            for (let dy = -protrustionWidth; dy <= protrustionWidth; dy++) {
+              const nx = Math.floor(x + dx)
+              const ny = Math.floor(y + dy)
+
+              if (nx >= 0 && nx < this.cols && ny >= 0 && ny < this.rows) {
+                const distToLine = Math.abs(dx * dirY - dy * dirX)
+                if (distToLine <= protrustionWidth) {
+                  this.cellsInShape[ny][nx] = true
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+
+  // Count the number of cells in the shape
+  countCellsInShape(): number {
+    let count = 0
+    for (let y = 0; y < this.rows; y++) {
+      for (let x = 0; x < this.cols; x++) {
+        if (this.cellsInShape[y][x]) {
+          count++
+        }
+      }
+    }
+    return count
+  }
+
+  // Expand the shape to reach the target cell count
+  expandShape(targetCellCount: number) {
+    const DX = [0, 1, 0, -1, 1, 1, -1, -1]
+    const DY = [-1, 0, 1, 0, -1, 1, 1, -1]
+
+    while (this.countCellsInShape() < targetCellCount) {
+      const borderCells: [number, number][] = []
+
+      // Find cells at the border of the shape
+      for (let y = 0; y < this.rows; y++) {
+        for (let x = 0; x < this.cols; x++) {
+          if (!this.cellsInShape[y][x]) {
+            // Check if this cell is adjacent to a shape cell
+            for (let dir = 0; dir < 8; dir++) {
+              const nx = x + DX[dir]
+              const ny = y + DY[dir]
+
+              if (
+                nx >= 0 &&
+                nx < this.cols &&
+                ny >= 0 &&
+                ny < this.rows &&
+                this.cellsInShape[ny][nx]
+              ) {
+                borderCells.push([x, y])
+                break
+              }
+            }
+          }
+        }
+      }
+
+      if (borderCells.length === 0) break
+
+      // Add a random border cell to the shape
+      const idx = Math.floor(Math.random() * borderCells.length)
+      const [x, y] = borderCells[idx]
+      this.cellsInShape[y][x] = true
+
+      // Stop if we've added enough cells
+      if (this.countCellsInShape() >= targetCellCount) break
+    }
+  }
+
+  // Shrink the shape to reach the target cell count
+  shrinkShape(targetCellCount: number) {
+    while (this.countCellsInShape() > targetCellCount) {
+      const borderCells: [number, number][] = []
+
+      // Find cells at the border of the shape
+      for (let y = 0; y < this.rows; y++) {
+        for (let x = 0; x < this.cols; x++) {
+          if (this.cellsInShape[y][x]) {
+            // Skip start and end cells
+            if (
+              (x === this.start.x && y === this.start.y) ||
+              (x === this.end.x && y === this.end.y)
+            ) {
+              continue
+            }
+
+            // Check if this cell is at the border (has at least one non-shape neighbor)
+            let isBorder = false
+            for (let ny = y - 1; ny <= y + 1; ny++) {
+              for (let nx = x - 1; nx <= x + 1; nx++) {
+                if (nx === x && ny === y) continue
+
+                if (
+                  nx < 0 ||
+                  nx >= this.cols ||
+                  ny < 0 ||
+                  ny >= this.rows ||
+                  !this.cellsInShape[ny][nx]
+                ) {
+                  isBorder = true
+                  break
+                }
+              }
+              if (isBorder) break
+            }
+
+            if (isBorder) {
+              borderCells.push([x, y])
+            }
+          }
+        }
+      }
+
+      if (borderCells.length === 0) break
+
+      // Remove a random border cell from the shape
+      const idx = Math.floor(Math.random() * borderCells.length)
+      const [x, y] = borderCells[idx]
+      this.cellsInShape[y][x] = false
+
+      // Stop if we've removed enough cells
+      if (this.countCellsInShape() <= targetCellCount) break
+    }
+  }
+
+  // Get all valid cells in the shape
+  getValidCellsInShape(): { x: number; y: number }[] {
+    const validCells: { x: number; y: number }[] = []
+    for (let y = 0; y < this.rows; y++) {
+      for (let x = 0; x < this.cols; x++) {
+        if (this.cellsInShape[y][x]) {
+          validCells.push({ x, y })
+        }
+      }
+    }
+    return validCells
   }
 
   generateMaze(): number[][] {
@@ -94,14 +416,14 @@ export class Maze {
       return array
     }
 
-    // Check if all maze cells are connected to the start position
+    // Check if all cells in the shape are connected to the start position
     const checkConnectivity = (): boolean => {
-      // Count total cells that should be part of maze
-      let totalMazeCells = 0
+      // Count total cells that should be part of maze (all cells in the shape)
+      let totalShapeCells = 0
       for (let y = 0; y < rows; y++) {
         for (let x = 0; x < cols; x++) {
-          if (isPartOfMaze[y][x]) {
-            totalMazeCells++
+          if (this.cellsInShape[y][x]) {
+            totalShapeCells++
           }
         }
       }
@@ -126,7 +448,7 @@ export class Maze {
             nx < cols &&
             ny >= 0 &&
             ny < rows &&
-            isPartOfMaze[ny][nx] &&
+            this.cellsInShape[ny][nx] && // Check if cell is in shape
             !bfsVisited[ny][nx] &&
             maze[y][x] & (1 << dir)
           ) {
@@ -137,8 +459,8 @@ export class Maze {
         }
       }
 
-      // If all maze cells are reachable, we have no orphans
-      return reachableCells === totalMazeCells
+      // If all cells in the shape are reachable, we have no orphans
+      return reachableCells === totalShapeCells
     }
 
     // Find a path from start to end to ensure maze is solvable
@@ -191,7 +513,14 @@ export class Maze {
         const nx = x + DX[dir]
         const ny = y + DY[dir]
 
-        if (nx >= 0 && nx < cols && ny >= 0 && ny < rows && !visited[ny][nx]) {
+        if (
+          nx >= 0 &&
+          nx < cols &&
+          ny >= 0 &&
+          ny < rows &&
+          !visited[ny][nx] &&
+          this.cellsInShape[ny][nx]
+        ) {
           // Remove wall between (x, y) and (nx, ny)
           maze[y][x] |= 1 << dir
           maze[ny][nx] |= 1 << (dir + 2) % 4
@@ -203,90 +532,305 @@ export class Maze {
     // Start carving from the start position
     carve(this.start.x, this.start.y)
 
-    // If totalCells is less than the maximum, create partial maze
-    const maxCells = cols * rows
-    if (this.totalCells < maxCells) {
-      // Use the specified number of cells
-      const targetCellCount = this.totalCells
-      let currentCellCount = 0
+    // Check for orphaned cells and connect them to the main maze
+    let connectivityAttempts = 0
+    const maxAttempts = 10 // Limit the number of attempts to prevent infinite loops
 
-      // Count cells that are already part of the maze
+    // First try the sophisticated cluster-based approach
+    while (!checkConnectivity() && connectivityAttempts < maxAttempts) {
+      connectivityAttempts++
+      // Find all cells that are part of the shape but not visited
+      const orphanedCells: [number, number][] = []
       for (let y = 0; y < rows; y++) {
         for (let x = 0; x < cols; x++) {
-          if (isPartOfMaze[y][x]) {
-            currentCellCount++
+          if (this.cellsInShape[y][x] && !isPartOfMaze[y][x]) {
+            orphanedCells.push([x, y])
           }
         }
       }
 
-      // Keep removing cells from the maze until we reach the target count
-      // But always ensure there's a path from start to end and no orphans
-      const candidates: [number, number][] = []
-
-      // Find cells that can be removed
-      for (let y = 0; y < rows; y++) {
-        for (let x = 0; x < cols; x++) {
-          // Don't remove start or end cells
-          if (
-            (x === this.start.x && y === this.start.y) ||
-            (x === this.end.x && y === this.end.y)
-          ) {
-            continue
-          }
-
-          if (isPartOfMaze[y][x]) {
-            candidates.push([x, y])
-          }
-        }
+      if (orphanedCells.length === 0) {
+        break // No more orphaned cells, but connectivity check failed - shouldn't happen
       }
 
-      // Shuffle candidates to remove cells randomly
-      shuffle(candidates)
+      // Process orphaned cells in clusters
+      // First, identify clusters of connected orphaned cells
+      const clusterMap = Array.from({ length: rows }, () =>
+        Array(cols).fill(-1)
+      )
+      let clusterCount = 0
 
-      for (const [x, y] of candidates) {
-        if (currentCellCount <= targetCellCount) break
+      // Function to identify clusters using flood fill
+      const identifyCluster = (x: number, y: number, clusterId: number) => {
+        const queue: [number, number][] = [[x, y]]
+        clusterMap[y][x] = clusterId
 
-        // Temporarily remove this cell
-        const oldValue = maze[y][x]
-        isPartOfMaze[y][x] = false
+        while (queue.length > 0) {
+          const [cx, cy] = queue.shift()!
 
-        // Remove connections to neighbors
-        for (let dir = 0; dir < 4; dir++) {
-          const nx = x + DX[dir]
-          const ny = y + DY[dir]
-
-          if (nx >= 0 && nx < cols && ny >= 0 && ny < rows) {
-            // Remove passage between cells
-            maze[y][x] &= ~(1 << dir)
-            maze[ny][nx] &= ~(1 << (dir + 2) % 4)
-          }
-        }
-
-        // Check if path still exists AND no orphan sections were created
-        if (
-          findPath(this.start.x, this.start.y, this.end.x, this.end.y) &&
-          checkConnectivity()
-        ) {
-          currentCellCount--
-        } else {
-          // Restore the cell if removing it breaks the path or creates orphans
-          maze[y][x] = oldValue
-          isPartOfMaze[y][x] = true
-
-          // Restore connections to neighbors
           for (let dir = 0; dir < 4; dir++) {
-            const nx = x + DX[dir]
-            const ny = y + DY[dir]
+            const nx = cx + DX[dir]
+            const ny = cy + DY[dir]
 
             if (
               nx >= 0 &&
               nx < cols &&
               ny >= 0 &&
               ny < rows &&
-              oldValue & (1 << dir)
+              this.cellsInShape[ny][nx] &&
+              !isPartOfMaze[ny][nx] &&
+              clusterMap[ny][nx] === -1
             ) {
-              maze[ny][nx] |= 1 << (dir + 2) % 4
+              clusterMap[ny][nx] = clusterId
+              queue.push([nx, ny])
             }
+          }
+        }
+      }
+
+      // Identify all clusters
+      for (const [x, y] of orphanedCells) {
+        if (clusterMap[y][x] === -1) {
+          identifyCluster(x, y, clusterCount++)
+        }
+      }
+
+      // For each cluster, find the nearest connected cell and connect it
+      for (let clusterId = 0; clusterId < clusterCount; clusterId++) {
+        // Get all cells in this cluster
+        const clusterCells: [number, number][] = []
+        for (let y = 0; y < rows; y++) {
+          for (let x = 0; x < cols; x++) {
+            if (clusterMap[y][x] === clusterId) {
+              clusterCells.push([x, y])
+            }
+          }
+        }
+
+        // Find the nearest connected cell to any cell in this cluster
+        let bestDistance = Infinity
+        let bestConnection: [number, number, number, number] | null = null // [clusterX, clusterY, connectedX, connectedY]
+
+        for (const [clusterX, clusterY] of clusterCells) {
+          // BFS to find the nearest connected cell
+          const cellQueue: [number, number, number][] = [] // [x, y, distance]
+          const cellVisited = Array.from({ length: rows }, () =>
+            Array(cols).fill(false)
+          )
+
+          cellQueue.push([clusterX, clusterY, 0])
+          cellVisited[clusterY][clusterX] = true
+
+          while (cellQueue.length > 0) {
+            const [cx, cy, dist] = cellQueue.shift()!
+
+            // Check if this is a connected cell
+            if (isPartOfMaze[cy][cx] && visited[cy][cx]) {
+              if (dist < bestDistance) {
+                bestDistance = dist
+                bestConnection = [clusterX, clusterY, cx, cy]
+              }
+              break // Found the nearest connected cell for this cluster cell
+            }
+
+            // Continue BFS
+            for (let dir = 0; dir < 4; dir++) {
+              const nx = cx + DX[dir]
+              const ny = cy + DY[dir]
+
+              if (
+                nx >= 0 &&
+                nx < cols &&
+                ny >= 0 &&
+                ny < rows &&
+                !cellVisited[ny][nx]
+              ) {
+                cellQueue.push([nx, ny, dist + 1])
+                cellVisited[ny][nx] = true
+              }
+            }
+          }
+        }
+
+        // Connect the cluster to the main maze
+        if (bestConnection) {
+          const [clusterX, clusterY, connectedX, connectedY] = bestConnection
+
+          // Find a path from the cluster cell to the connected cell
+          const pathQueue: [number, number, number[][]][] = [] // [x, y, path]
+          const pathVisited = Array.from({ length: rows }, () =>
+            Array(cols).fill(false)
+          )
+
+          pathQueue.push([clusterX, clusterY, [[clusterX, clusterY]]])
+          pathVisited[clusterY][clusterX] = true
+
+          while (pathQueue.length > 0) {
+            const [cx, cy, path] = pathQueue.shift()!
+
+            if (cx === connectedX && cy === connectedY) {
+              // Found the path, now carve it
+              for (let i = 0; i < path.length - 1; i++) {
+                const [x1, y1] = path[i]
+                const [x2, y2] = path[i + 1]
+
+                // Determine direction
+                for (let dir = 0; dir < 4; dir++) {
+                  if (x1 + DX[dir] === x2 && y1 + DY[dir] === y2) {
+                    maze[y1][x1] |= 1 << dir
+                    maze[y2][x2] |= 1 << (dir + 2) % 4
+                    break
+                  }
+                }
+
+                // Mark cells as part of the maze
+                isPartOfMaze[y1][x1] = true
+                isPartOfMaze[y2][x2] = true
+                visited[y1][x1] = true
+                visited[y2][x2] = true
+              }
+              break
+            }
+
+            // Continue BFS
+            for (let dir = 0; dir < 4; dir++) {
+              const nx = cx + DX[dir]
+              const ny = cy + DY[dir]
+
+              if (
+                nx >= 0 &&
+                nx < cols &&
+                ny >= 0 &&
+                ny < rows &&
+                !pathVisited[ny][nx]
+              ) {
+                const newPath = [...path, [nx, ny]]
+                pathQueue.push([nx, ny, newPath])
+                pathVisited[ny][nx] = true
+              }
+            }
+          }
+        }
+      }
+
+      // Don't automatically mark all orphaned cells as part of the maze
+      // Only cells that were actually connected through the path finding should be marked
+      // The rest will be handled in the next iteration of the while loop
+    }
+
+    // If we still have orphaned cells after max attempts, use a simpler approach
+    // to forcibly connect any remaining orphaned cells
+    if (!checkConnectivity()) {
+      console.log(
+        'Using fallback connectivity method for remaining orphaned cells'
+      )
+
+      // Find all remaining orphaned cells
+      const remainingOrphans: [number, number][] = []
+      for (let y = 0; y < rows; y++) {
+        for (let x = 0; x < cols; x++) {
+          if (this.cellsInShape[y][x] && !isPartOfMaze[y][x]) {
+            remainingOrphans.push([x, y])
+            isPartOfMaze[y][x] = true // Mark as part of maze
+          }
+        }
+      }
+
+      // For each orphaned cell, connect it directly to the nearest accessible cell
+      for (const [x, y] of remainingOrphans) {
+        // BFS to find the nearest accessible cell
+        const queue: [number, number, number[][]][] = [] // [x, y, path]
+        const visited = Array.from({ length: rows }, () =>
+          Array(cols).fill(false)
+        )
+
+        queue.push([x, y, [[x, y]]])
+        visited[y][x] = true
+
+        let foundPath = false
+
+        while (queue.length > 0 && !foundPath) {
+          const [cx, cy, path] = queue.shift()!
+
+          // Check if this cell is already connected to the maze
+          if (cx !== x || cy !== y) {
+            // Skip the starting cell
+            if (isPartOfMaze[cy][cx] && visited[cy][cx]) {
+              // Found a connected cell, carve a path to it
+              for (let i = 0; i < path.length - 1; i++) {
+                const [x1, y1] = path[i]
+                const [x2, y2] = path[i + 1]
+
+                // Determine direction
+                for (let dir = 0; dir < 4; dir++) {
+                  if (x1 + DX[dir] === x2 && y1 + DY[dir] === y2) {
+                    maze[y1][x1] |= 1 << dir
+                    maze[y2][x2] |= 1 << (dir + 2) % 4
+                    break
+                  }
+                }
+              }
+
+              foundPath = true
+              break
+            }
+          }
+
+          // Continue BFS
+          for (let dir = 0; dir < 4; dir++) {
+            const nx = cx + DX[dir]
+            const ny = cy + DY[dir]
+
+            if (
+              nx >= 0 &&
+              nx < cols &&
+              ny >= 0 &&
+              ny < rows &&
+              !visited[ny][nx]
+            ) {
+              const newPath = [...path, [nx, ny]]
+              queue.push([nx, ny, newPath])
+              visited[ny][nx] = true
+            }
+          }
+        }
+      }
+    }
+
+    // Ensure every cell has at least one exit
+    for (let y = 0; y < rows; y++) {
+      for (let x = 0; x < cols; x++) {
+        if (this.cellsInShape[y][x] && maze[y][x] === 0) {
+          // This cell has no exits, create at least one
+          const possibleExits = []
+
+          // Check all four directions for valid exits
+          for (let dir = 0; dir < 4; dir++) {
+            const nx = x + DX[dir]
+            const ny = y + DY[dir]
+
+            // Check if the neighboring cell is valid and part of the shape
+            if (
+              nx >= 0 &&
+              nx < cols &&
+              ny >= 0 &&
+              ny < rows &&
+              this.cellsInShape[ny][nx]
+            ) {
+              possibleExits.push(dir)
+            }
+          }
+
+          if (possibleExits.length > 0) {
+            // Randomly select one direction to create an exit
+            const randomDir =
+              possibleExits[Math.floor(Math.random() * possibleExits.length)]
+            const nx = x + DX[randomDir]
+            const ny = y + DY[randomDir]
+
+            // Remove the wall between current cell and the selected neighbor
+            maze[y][x] |= 1 << randomDir
+            maze[ny][nx] |= 1 << (randomDir + 2) % 4 // Opposite direction
           }
         }
       }
@@ -298,59 +842,61 @@ export class Maze {
   render() {
     const graphics = this.scene.add.graphics()
 
-    // First render any empty cells with a light background
+    // First render any cells that are not part of the shape with a light background
     graphics.fillStyle(COLOR_EMPTY, 0.5)
     for (let y = 0; y < this.rows; y++) {
       for (let x = 0; x < this.cols; x++) {
-        // Skip start and end cells
-        if (
-          (x === this.start.x && y === this.start.y) ||
-          (x === this.end.x && y === this.end.y)
-        ) {
-          continue
-        }
-
-        // Check if this is an empty cell by looking at walls
-        // If all walls are present, it's likely an unused cell
-        const cell = this.grid[y][x]
-        if (cell === 0) {
+        if (!this.cellsInShape[y][x]) {
           graphics.fillRect(x * GRID_SIZE, y * GRID_SIZE, GRID_SIZE, GRID_SIZE)
         }
       }
     }
 
-    // Then render walls
+    // Then render walls only for cells that are part of the shape
     graphics.lineStyle(2, COLOR_MAZE, 1)
     for (let y = 0; y < this.rows; y++) {
       for (let x = 0; x < this.cols; x++) {
+        // Skip cells that are not part of the shape
+        if (!this.cellsInShape[y][x]) {
+          continue
+        }
+
         const cell = this.grid[y][x]
 
-        // Top wall
-        if (!(cell & 1)) {
+        // Top wall - draw if cell has a top wall or if the cell above is not part of the shape
+        if (!(cell & 1) || y === 0 || !this.cellsInShape[y - 1][x]) {
           graphics.beginPath()
           graphics.moveTo(x * GRID_SIZE, y * GRID_SIZE)
           graphics.lineTo((x + 1) * GRID_SIZE, y * GRID_SIZE)
           graphics.strokePath()
         }
 
-        // Right wall
-        if (!(cell & 2)) {
+        // Right wall - draw if cell has a right wall or if the cell to the right is not part of the shape
+        if (
+          !(cell & 2) ||
+          x === this.cols - 1 ||
+          !this.cellsInShape[y][x + 1]
+        ) {
           graphics.beginPath()
           graphics.moveTo((x + 1) * GRID_SIZE, y * GRID_SIZE)
           graphics.lineTo((x + 1) * GRID_SIZE, (y + 1) * GRID_SIZE)
           graphics.strokePath()
         }
 
-        // Bottom wall
-        if (!(cell & 4)) {
+        // Bottom wall - draw if cell has a bottom wall or if the cell below is not part of the shape
+        if (
+          !(cell & 4) ||
+          y === this.rows - 1 ||
+          !this.cellsInShape[y + 1][x]
+        ) {
           graphics.beginPath()
           graphics.moveTo(x * GRID_SIZE, (y + 1) * GRID_SIZE)
           graphics.lineTo((x + 1) * GRID_SIZE, (y + 1) * GRID_SIZE)
           graphics.strokePath()
         }
 
-        // Left wall
-        if (!(cell & 8)) {
+        // Left wall - draw if cell has a left wall or if the cell to the left is not part of the shape
+        if (!(cell & 8) || x === 0 || !this.cellsInShape[y][x - 1]) {
           graphics.beginPath()
           graphics.moveTo(x * GRID_SIZE, y * GRID_SIZE)
           graphics.lineTo(x * GRID_SIZE, (y + 1) * GRID_SIZE)
@@ -371,7 +917,13 @@ export class Maze {
 
   // Helper to check if a cell is valid
   isValidCell(x: number, y: number): boolean {
-    return x >= 0 && x < this.cols && y >= 0 && y < this.rows
+    return (
+      x >= 0 &&
+      x < this.cols &&
+      y >= 0 &&
+      y < this.rows &&
+      this.cellsInShape[y][x]
+    )
   }
 
   // Helper to check if a wall exists between two cells
