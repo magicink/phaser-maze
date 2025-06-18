@@ -1,5 +1,6 @@
 import Phaser from 'phaser'
 import { GameManager } from './GameManager'
+import { Maze } from './Maze'
 
 const GRID_SIZE = 16
 const COLOR_PLAYER = 0x1952a6 // Dark blue for player
@@ -55,13 +56,29 @@ export class Player {
     this.setCell(currentCell)
   }
 
-  moveBy(dx: number, dy: number, maze: any) {
+  moveBy(dx: number, dy: number, maze: Maze) {
     const newX = this.cell.x + dx
     const newY = this.cell.y + dy
     if (maze && maze.isMoveAllowed(this.cell.x, this.cell.y, dx, dy)) {
       this.setCell({ x: newX, y: newY })
       // Increment step count when a valid move is made
       GameManager.getInstance().incrementSteps()
+
+      // Check if player has reached the exit
+      this.checkForLevelCompletion(maze)
+    }
+  }
+
+  checkForLevelCompletion(maze: Maze): void {
+    const exitCell = maze.getEnd()
+    // If player's position matches the exit position
+    if (this.cell.x === exitCell.x && this.cell.y === exitCell.y) {
+      // Level completed! Increment level
+      const gameManager = GameManager.getInstance()
+      gameManager.incrementLevel()
+
+      // Reset the current scene to generate a new maze for the next level
+      this.scene.scene.restart()
     }
   }
 

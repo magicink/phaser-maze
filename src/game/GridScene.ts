@@ -2,10 +2,14 @@ import Phaser from 'phaser'
 import { Player } from './Player'
 import { Maze } from './Maze'
 import { GameManager } from './GameManager'
+import { EventBus } from '@/lib/shared/EventBus'
+import { EVENT_LEVEL_UPDATED } from '@/lib/shared/EventBusEvents'
 
 const GRID_SIZE = 16
 const COLOR_BG = 0xf8f9fa // Very light grey
 const COLOR_GRID = 0xc7d6e6 // Light bluish grey, darker than COLOR_BG
+const MIN_FILL_PERCENTAGE = 50 // Minimum fill percentage for mazes
+const MAX_FILL_PERCENTAGE = 90 // Maximum fill percentage for mazes
 
 let player: Player | null = null
 let maze: Maze | null = null
@@ -15,9 +19,24 @@ export class GridScene extends Phaser.Scene {
     super({ key: 'GridScene' })
   }
 
+  // Helper method to generate a random fill percentage
+  getRandomFillPercentage(): number {
+    return (
+      Math.floor(
+        Math.random() * (MAX_FILL_PERCENTAGE - MIN_FILL_PERCENTAGE + 1)
+      ) + MIN_FILL_PERCENTAGE
+    )
+  }
+
   init() {
     this.drawGrid()
-    maze = new Maze(this, this.scale.width, this.scale.height)
+    // Create maze with random fill percentage
+    maze = new Maze(
+      this,
+      this.scale.width,
+      this.scale.height,
+      this.getRandomFillPercentage()
+    )
     maze.render()
     player = new Player(this)
     if (maze && player) {
@@ -71,7 +90,13 @@ export class GridScene extends Phaser.Scene {
   handleResize(gameSize: Phaser.Structs.Size) {
     this.cameras.main.setSize(gameSize.width, gameSize.height)
     this.drawGrid()
-    maze = new Maze(this, this.scale.width, this.scale.height)
+    // Create maze with random fill percentage
+    maze = new Maze(
+      this,
+      this.scale.width,
+      this.scale.height,
+      this.getRandomFillPercentage()
+    )
     maze.render()
     if (player) player.redraw()
     if (maze && player) {
