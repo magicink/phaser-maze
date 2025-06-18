@@ -5,6 +5,12 @@
  */
 
 export class MazeShapes {
+  // Shape type constants
+  static readonly SHAPE_BLOB = 'blob'
+  static readonly SHAPE_PARABOLA = 'parabola'
+  static readonly SHAPE_HEART = 'heart'
+  static readonly SHAPE_SPIRAL = 'spiral'
+  static readonly SHAPE_RANDOM = 'random'
   /**
    * Generate a blob-like shape (irregular circle)
    * @param rows Number of rows in the grid

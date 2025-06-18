@@ -78,7 +78,13 @@ export class Maze {
   // Generate a shape for the maze
   generateShape() {
     // Randomly choose a shape type
-    const shapeTypes = ['blob', 'parabola', 'random', 'heart', 'spiral']
+    const shapeTypes = [
+      MazeShapes.SHAPE_BLOB,
+      MazeShapes.SHAPE_PARABOLA,
+      MazeShapes.SHAPE_RANDOM,
+      MazeShapes.SHAPE_HEART,
+      MazeShapes.SHAPE_SPIRAL
+    ]
     const shapeType = shapeTypes[Math.floor(Math.random() * shapeTypes.length)]
 
     // Calculate center of the grid
@@ -93,7 +99,7 @@ export class Maze {
 
     // Generate the selected shape using the MazeShapes library
     switch (shapeType) {
-      case 'blob':
+      case MazeShapes.SHAPE_BLOB:
         this.cellsInShape = MazeShapes.generateBlobShape(
           this.rows,
           this.cols,
@@ -102,7 +108,7 @@ export class Maze {
           radius
         )
         break
-      case 'parabola':
+      case MazeShapes.SHAPE_PARABOLA:
         this.cellsInShape = MazeShapes.generateParabolaShape(
           this.rows,
           this.cols,
@@ -111,7 +117,7 @@ export class Maze {
           radius
         )
         break
-      case 'heart':
+      case MazeShapes.SHAPE_HEART:
         this.cellsInShape = MazeShapes.generateHeartShape(
           this.rows,
           this.cols,
@@ -120,7 +126,7 @@ export class Maze {
           radius
         )
         break
-      case 'spiral':
+      case MazeShapes.SHAPE_SPIRAL:
         this.cellsInShape = MazeShapes.generateSpiralShape(
           this.rows,
           this.cols,
@@ -129,7 +135,7 @@ export class Maze {
           radius
         )
         break
-      case 'random':
+      case MazeShapes.SHAPE_RANDOM:
       default:
         this.cellsInShape = MazeShapes.generateRandomShape(
           this.rows,
