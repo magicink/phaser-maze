@@ -392,6 +392,53 @@ export class Maze {
     return validCells
   }
 
+  // Ensure all cells are reachable from the starting point
+  ensureReachableCells() {
+    const visited = Array.from({ length: this.rows }, () =>
+      Array(this.cols).fill(false)
+    )
+
+    // BFS to discover reachable cells
+    const queue = [this.start]
+    visited[this.start.y][this.start.x] = true
+
+    while (queue.length > 0) {
+      const { x, y } = queue.shift()!
+
+      // Check neighbors
+      const neighbors = [
+        { x: x - 1, y },
+        { x: x + 1, y },
+        { x, y: y - 1 },
+        { x, y: y + 1 }
+      ]
+
+      for (const neighbor of neighbors) {
+        if (
+          neighbor.x >= 0 &&
+          neighbor.x < this.cols &&
+          neighbor.y >= 0 &&
+          neighbor.y < this.rows &&
+          this.cellsInShape[neighbor.y][neighbor.x] &&
+          !visited[neighbor.y][neighbor.x]
+        ) {
+          visited[neighbor.y][neighbor.x] = true
+          queue.push(neighbor)
+        }
+      }
+    }
+
+    // Mark unreachable cells as inaccessible
+    for (let y = 0; y < this.rows; y++) {
+      for (let x = 0; x < this.cols; x++) {
+        if (this.cellsInShape[y][x] && !visited[y][x]) {
+          this.cellsInShape[y][x] = false
+        }
+      }
+    }
+  }
+
+  // Update maze generation to ensure reachable cells
   generateMaze(): number[][] {
     // Simple recursive backtracking maze generation
     const cols = this.cols
@@ -831,6 +878,68 @@ export class Maze {
             // Remove the wall between current cell and the selected neighbor
             maze[y][x] |= 1 << randomDir
             maze[ny][nx] |= 1 << (randomDir + 2) % 4 // Opposite direction
+          }
+        }
+      }
+    }
+
+    // Ensure all cells are reachable from the starting point
+    this.ensureReachableCells()
+
+    // Ensure there's a path from start to end
+    if (!findPath(this.start.x, this.start.y, this.end.x, this.end.y)) {
+      console.log('No path found from start to end, creating one...')
+
+      // Create a direct path from start to end if no path exists
+      const pathQueue: [number, number, number[][]][] = [] // [x, y, path]
+      const pathVisited = Array.from({ length: rows }, () =>
+        Array(cols).fill(false)
+      )
+
+      pathQueue.push([
+        this.start.x,
+        this.start.y,
+        [[this.start.x, this.start.y]]
+      ])
+      pathVisited[this.start.y][this.start.x] = true
+
+      while (pathQueue.length > 0) {
+        const [cx, cy, path] = pathQueue.shift()!
+
+        if (cx === this.end.x && cy === this.end.y) {
+          // Found a path, carve it
+          for (let i = 0; i < path.length - 1; i++) {
+            const [x1, y1] = path[i]
+            const [x2, y2] = path[i + 1]
+
+            // Determine direction
+            for (let dir = 0; dir < 4; dir++) {
+              if (x1 + DX[dir] === x2 && y1 + DY[dir] === y2) {
+                maze[y1][x1] |= 1 << dir
+                maze[y2][x2] |= 1 << (dir + 2) % 4
+                break
+              }
+            }
+          }
+          break
+        }
+
+        // Continue BFS
+        for (let dir = 0; dir < 4; dir++) {
+          const nx = cx + DX[dir]
+          const ny = cy + DY[dir]
+
+          if (
+            nx >= 0 &&
+            nx < cols &&
+            ny >= 0 &&
+            ny < rows &&
+            this.cellsInShape[ny][nx] &&
+            !pathVisited[ny][nx]
+          ) {
+            const newPath = [...path, [nx, ny]]
+            pathQueue.push([nx, ny, newPath])
+            pathVisited[ny][nx] = true
           }
         }
       }
