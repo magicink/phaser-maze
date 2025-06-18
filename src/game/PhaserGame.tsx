@@ -39,7 +39,7 @@ export const PhaserGame = forwardRef<
   }, [ref])
 
   useEffect(() => {
-    EventBus.on(EVENT_CURRENT_SCENE_READY, (scene_instance: Phaser.Scene) => {
+    const handleSceneReady = (scene_instance: Phaser.Scene) => {
       if (currentActiveScene && typeof currentActiveScene === 'function') {
         currentActiveScene(scene_instance)
       }
@@ -49,9 +49,11 @@ export const PhaserGame = forwardRef<
       } else if (ref) {
         ref.current = { game: game.current, scene: scene_instance }
       }
-    })
+    }
+
+    EventBus.on(EVENT_CURRENT_SCENE_READY, handleSceneReady)
     return () => {
-      EventBus.removeListener(EVENT_CURRENT_SCENE_READY)
+      EventBus.removeListener(EVENT_CURRENT_SCENE_READY, handleSceneReady)
     }
   }, [currentActiveScene, ref])
 
