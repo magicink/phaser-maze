@@ -76,9 +76,9 @@ export class GridScene extends Phaser.Scene {
     camera.setScroll(0, 0)
 
     this.children.removeAll()
-    const graphics = this.add.graphics()
-    graphics.fillStyle(COLOR_BG, 1)
-    graphics.fillRect(0, 0, width, height)
+    this.graphics.clear() // Clear the existing graphics
+    this.graphics.fillStyle(COLOR_BG, 1)
+    this.graphics.fillRect(0, 0, width, height)
     graphics.lineStyle(1, this.gridColor, 1)
     // Draw only lines that are fully within the canvas
     for (let x = 0; x < width; x += GRID_SIZE) {
