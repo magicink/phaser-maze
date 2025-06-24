@@ -74,8 +74,8 @@ export class Maze {
       const dx = [0, 1, 0, -1]
       const dy = [-1, 0, 1, 0]
 
-      while (queue.length > 0) {
-        const [x, y, distance] = queue.shift()!
+      while (head < queue.length) {
+        const [x, y, distance] = queue[head++]
 
         if (x === endX && y === endY) {
           return distance
