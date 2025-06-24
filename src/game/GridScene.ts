@@ -5,7 +5,7 @@ const COLOR_BG = 0xf8f9fa // Very light grey
 // No base hue - we'll use the full color spectrum
 
 export class GridScene extends Phaser.Scene {
-  private gridColor: number = 0xc7d6e6 // Initial color, will be randomized
+  private gridColor: number = 0xc7d6e6 // Initial color will be randomized
   constructor() {
     super({ key: 'GridScene' })
   }
@@ -50,6 +50,11 @@ export class GridScene extends Phaser.Scene {
     const bHex = Math.floor((b + m) * 255)
 
     // Convert to 0xRRGGBB format
+    // Bitwise operations are used here for efficient color composition:
+    // 1. (rHex << 16) shifts the red component to the leftmost 8 bits
+    // 2. (gHex << 8) shifts the green component to the middle 8 bits
+    // 3. The bitwise OR (|) combines these with the blue component
+    // This is more efficient than string manipulation and parseInt/toString conversions
     const newColor = (rHex << 16) | (gHex << 8) | bHex
 
     if (useTween) {
@@ -110,6 +115,12 @@ export class GridScene extends Phaser.Scene {
 
   // Helper method to extract RGB components from a color
   private hexToRgb(hex: number): { r: number; g: number; b: number } {
+    // Bitwise operations are used here for efficient color decomposition:
+    // 1. (hex >> 16) shifts the red component from the leftmost 8 bits to the rightmost position
+    // 2. (hex >> 8) shifts the green component from the middle 8 bits to the rightmost position
+    // 3. The bitwise AND (&) with 0xff (255) masks out all but the lowest 8 bits
+    // This is significantly more efficient than string manipulation methods like hex.toString(16)
+    // and then parsing substrings, especially for real-time animations
     return {
       r: (hex >> 16) & 0xff,
       g: (hex >> 8) & 0xff,
@@ -140,6 +151,10 @@ export class GridScene extends Phaser.Scene {
       ease: 'Linear',
       onUpdate: () => {
         // Update the grid color during the tween
+        // Bitwise operations are used here for the same reason as in color composition:
+        // 1. Shifting and combining with OR creates a compact color representation
+        // 2. This is more performant than string-based hex color creation, which is
+        //    critical in this animation loop that runs many times per second
         this.gridColor =
           (Math.floor(colorObject.r) << 16) |
           (Math.floor(colorObject.g) << 8) |
