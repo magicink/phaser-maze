@@ -29,7 +29,7 @@ export class GridScene extends Phaser.Scene {
     const x = c * (1 - Math.abs(((hue / 60) % 2) - 1))
     const m = lightness - c / 2
 
-    let r, g, b
+    let r: number, g: number, b: number
     if (hue < 60) {
       ;[r, g, b] = [c, x, 0]
     } else if (hue < 120) {
