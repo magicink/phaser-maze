@@ -1,6 +1,7 @@
 import Phaser from 'phaser'
 import { GameManager } from './GameManager'
 import { Maze } from './Maze'
+import { GridScene } from './GridScene'
 import { COLOR_PLAYER, GRID_SIZE } from '@/game/constants'
 
 export class Player {
@@ -76,7 +77,7 @@ export class Player {
       gameManager.incrementLevel()
 
       // Get the GridScene and call generateRandomGridColor with tweening enabled
-      const gridScene = this.scene.scene.get('GridScene') as any
+      const gridScene = this.scene.scene.get('GridScene') as GridScene
       if (
         gridScene &&
         typeof gridScene.generateRandomGridColor === 'function'
