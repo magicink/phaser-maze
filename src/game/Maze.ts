@@ -55,7 +55,54 @@ export class Maze {
       this.start = { ...validCells[startIdx] }
     }
 
-    // Pick a random end cell within the shape (different from start)
+    // Calculate the minimum required distance (at least half the total cells)
+    const minRequiredDistance = Math.ceil(this.totalCells / 2)
+
+    // Function to calculate the shortest path distance between two points
+    const calculateDistance = (
+      startX: number,
+      startY: number,
+      endX: number,
+      endY: number
+    ): number => {
+      const queue: [number, number, number][] = [[startX, startY, 0]] // [x, y, distance]
+      const visited = Array.from({ length: this.rows }, () =>
+        Array(this.cols).fill(false)
+      )
+      visited[startY][startX] = true
+
+      const dx = [0, 1, 0, -1]
+      const dy = [-1, 0, 1, 0]
+
+      while (queue.length > 0) {
+        const [x, y, distance] = queue.shift()!
+
+        if (x === endX && y === endY) {
+          return distance
+        }
+
+        for (let dir = 0; dir < 4; dir++) {
+          const nx = x + dx[dir]
+          const ny = y + dy[dir]
+
+          if (
+            nx >= 0 &&
+            nx < this.cols &&
+            ny >= 0 &&
+            ny < this.rows &&
+            this.cellsInShape[ny][nx] &&
+            !visited[ny][nx]
+          ) {
+            queue.push([nx, ny, distance + 1])
+            visited[ny][nx] = true
+          }
+        }
+      }
+
+      return -1 // No path found
+    }
+
+    // Filter candidates that are different from start
     const endCandidates = validCells.filter(
       cell => !(cell.x === this.start.x && cell.y === this.start.y)
     )
@@ -68,8 +115,44 @@ export class Maze {
       }
       this.cellsInShape[this.end.y][this.end.x] = true
     } else {
-      const endIdx = Math.floor(Math.random() * endCandidates.length)
-      this.end = { ...endCandidates[endIdx] }
+      // Find candidates that are at least minRequiredDistance away
+      const distantCandidates = endCandidates.filter(cell => {
+        const distance = calculateDistance(
+          this.start.x,
+          this.start.y,
+          cell.x,
+          cell.y
+        )
+        return distance >= minRequiredDistance && distance !== -1
+      })
+
+      if (distantCandidates.length > 0) {
+        // Pick a random end cell from the distant candidates
+        const endIdx = Math.floor(Math.random() * distantCandidates.length)
+        this.end = { ...distantCandidates[endIdx] }
+      } else {
+        // If no distant candidates, pick the farthest one
+        let maxDistance = -1
+        let farthestCell = endCandidates[0]
+
+        for (const cell of endCandidates) {
+          const distance = calculateDistance(
+            this.start.x,
+            this.start.y,
+            cell.x,
+            cell.y
+          )
+          if (distance > maxDistance && distance !== -1) {
+            maxDistance = distance
+            farthestCell = cell
+          }
+        }
+
+        this.end = { ...farthestCell }
+        console.log(
+          `Using farthest available cell with distance ${maxDistance} (required: ${minRequiredDistance})`
+        )
+      }
     }
 
     this.grid = this.generateMaze()
