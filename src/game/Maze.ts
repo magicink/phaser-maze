@@ -435,7 +435,7 @@ export class Maze {
           // 2. The bitwise AND checks if that bit is set in the cell's value
           // 3. This is checking if there's a passage from the current cell to the neighbor
           // This approach is more efficient than storing connectivity in a separate data structure
-          const hasPassage = maze[y][x] & (1 << dir)
+          const hasPassage = maze[y][x] & [TOP, RIGHT, BOTTOM, LEFT][dir]
 
           if (
             nx >= 0 &&
