@@ -55,7 +55,54 @@ export class Maze {
       this.start = { ...validCells[startIdx] }
     }
 
-    // Pick a random end cell within the shape (different from start)
+    // Calculate the minimum required distance (at least half the total cells)
+    const minRequiredDistance = Math.ceil(this.totalCells / 2)
+
+    // Function to calculate the shortest path distance between two points
+    const calculateDistance = (
+      startX: number,
+      startY: number,
+      endX: number,
+      endY: number
+    ): number => {
+      const queue: [number, number, number][] = [[startX, startY, 0]] // [x, y, distance]
+      const visited = Array.from({ length: this.rows }, () =>
+        Array(this.cols).fill(false)
+      )
+      visited[startY][startX] = true
+
+      const dx = [0, 1, 0, -1]
+      const dy = [-1, 0, 1, 0]
+
+      while (head < queue.length) {
+        const [x, y, distance] = queue[head++]
+
+        if (x === endX && y === endY) {
+          return distance
+        }
+
+        for (let dir = 0; dir < 4; dir++) {
+          const nx = x + dx[dir]
+          const ny = y + dy[dir]
+
+          if (
+            nx >= 0 &&
+            nx < this.cols &&
+            ny >= 0 &&
+            ny < this.rows &&
+            this.cellsInShape[ny][nx] &&
+            !visited[ny][nx]
+          ) {
+            queue.push([nx, ny, distance + 1])
+            visited[ny][nx] = true
+          }
+        }
+      }
+
+      return -1 // No path found
+    }
+
+    // Filter candidates that are different from start
     const endCandidates = validCells.filter(
       cell => !(cell.x === this.start.x && cell.y === this.start.y)
     )
@@ -68,8 +115,44 @@ export class Maze {
       }
       this.cellsInShape[this.end.y][this.end.x] = true
     } else {
-      const endIdx = Math.floor(Math.random() * endCandidates.length)
-      this.end = { ...endCandidates[endIdx] }
+      // Find candidates that are at least minRequiredDistance away
+      const distantCandidates = endCandidates.filter(cell => {
+        const distance = calculateDistance(
+          this.start.x,
+          this.start.y,
+          cell.x,
+          cell.y
+        )
+        return distance >= minRequiredDistance && distance !== -1
+      })
+
+      if (distantCandidates.length > 0) {
+        // Pick a random end cell from the distant candidates
+        const endIdx = Math.floor(Math.random() * distantCandidates.length)
+        this.end = { ...distantCandidates[endIdx] }
+      } else {
+        // If no distant candidates, pick the farthest one
+        let maxDistance = -1
+        let farthestCell = endCandidates[0]
+
+        for (const cell of endCandidates) {
+          const distance = calculateDistance(
+            this.start.x,
+            this.start.y,
+            cell.x,
+            cell.y
+          )
+          if (distance > maxDistance && distance !== -1) {
+            maxDistance = distance
+            farthestCell = cell
+          }
+        }
+
+        this.end = { ...farthestCell }
+        console.log(
+          `Using farthest available cell with distance ${maxDistance} (required: ${minRequiredDistance})`
+        )
+      }
     }
 
     this.grid = this.generateMaze()
@@ -332,7 +415,7 @@ export class Maze {
         }
       }
 
-      // BFS from start position to count reachable cells
+      // BFS from the start position to count reachable cells
       const bfsVisited = Array.from({ length: rows }, () =>
         Array(cols).fill(false)
       )
@@ -347,6 +430,13 @@ export class Maze {
           const nx = x + DX[dir]
           const ny = y + DY[dir]
 
+          // Bitwise operations for checking connectivity:
+          // 1. (1 << dir) creates a bit mask for the current direction
+          // 2. The bitwise AND checks if that bit is set in the cell's value
+          // 3. This is checking if there's a passage from the current cell to the neighbor
+          // This approach is more efficient than storing connectivity in a separate data structure
+          const hasPassage = maze[y][x] & [TOP, RIGHT, BOTTOM, LEFT][dir]
+
           if (
             nx >= 0 &&
             nx < cols &&
@@ -354,7 +444,7 @@ export class Maze {
             ny < rows &&
             this.cellsInShape[ny][nx] && // Check if cell is in shape
             !bfsVisited[ny][nx] &&
-            maze[y][x] & (1 << dir)
+            hasPassage
           ) {
             queue.push([nx, ny])
             bfsVisited[ny][nx] = true
@@ -389,6 +479,14 @@ export class Maze {
           const nx = x + DX[dir]
           const ny = y + DY[dir]
 
+          // Bitwise operations for path finding:
+          // 1. (1 << dir) creates a bit mask for the current direction
+          // 2. The bitwise AND checks if that bit is set in the cell's value
+          // 3. This is checking if there's a passage from the current cell to the neighbor
+          // Using bitwise operations here allows for fast path finding, which is critical
+          // for maze generation and validation
+          const hasPathPassage = maze[y][x] & (1 << dir)
+
           if (
             nx >= 0 &&
             nx < cols &&
@@ -396,7 +494,7 @@ export class Maze {
             ny < rows &&
             isPartOfMaze[ny][nx] &&
             !pathVisited[ny][nx] &&
-            maze[y][x] & (1 << dir)
+            hasPathPassage
           ) {
             queue.push([nx, ny])
             pathVisited[ny][nx] = true
@@ -426,6 +524,12 @@ export class Maze {
           this.cellsInShape[ny][nx]
         ) {
           // Remove wall between (x, y) and (nx, ny)
+          // Bitwise operations are used here for efficient maze representation:
+          // 1. (1 << dir) creates a bit mask where only the bit at position 'dir' is set to 1
+          // 2. The bitwise OR assignment (|=) sets that specific bit in the cell's value
+          // 3. This compact representation uses a single number to store the state of all four walls
+          //    (0=top, 1=right, 2=bottom, 3=left), which is more memory-efficient than using
+          //    four separate boolean values or an array
           maze[y][x] |= 1 << dir
           maze[ny][nx] |= 1 << (dir + 2) % 4
           carve(nx, ny)
@@ -854,8 +958,18 @@ export class Maze {
 
         const cell = this.grid[y][x]
 
+        // Bitwise operations are used here for efficient wall rendering:
+        // Each cell stores wall information as bits in a single number:
+        // - Bit 0 (value 1): passage to the top
+        // - Bit 1 (value 2): passage to the right
+        // - Bit 2 (value 4): passage to the bottom
+        // - Bit 3 (value 8): passage to the left
+        // Using bitwise AND (&) with these values checks if the corresponding passage exists
+        // The NOT operator (!) inverts the result to check for walls instead of passages
+
         // Top wall - draw if cell has a top wall or if the cell above is not part of the shape
-        if (!(cell & 1) || y === 0 || !this.cellsInShape[y - 1][x]) {
+        const hasTopPassage = cell & 1
+        if (!hasTopPassage || y === 0 || !this.cellsInShape[y - 1][x]) {
           graphics.beginPath()
           graphics.moveTo(x * GRID_SIZE, y * GRID_SIZE)
           graphics.lineTo((x + 1) * GRID_SIZE, y * GRID_SIZE)
@@ -863,8 +977,9 @@ export class Maze {
         }
 
         // Right wall - draw if cell has a right wall or if the cell to the right is not part of the shape
+        const hasRightPassage = cell & 2
         if (
-          !(cell & 2) ||
+          !hasRightPassage ||
           x === this.cols - 1 ||
           !this.cellsInShape[y][x + 1]
         ) {
@@ -875,8 +990,9 @@ export class Maze {
         }
 
         // Bottom wall - draw if cell has a bottom wall or if the cell below is not part of the shape
+        const hasBottomPassage = cell & 4
         if (
-          !(cell & 4) ||
+          !hasBottomPassage ||
           y === this.rows - 1 ||
           !this.cellsInShape[y + 1][x]
         ) {
@@ -887,7 +1003,8 @@ export class Maze {
         }
 
         // Left wall - draw if cell has a left wall or if the cell to the left is not part of the shape
-        if (!(cell & 8) || x === 0 || !this.cellsInShape[y][x - 1]) {
+        const hasLeftPassage = cell & 8
+        if (!hasLeftPassage || x === 0 || !this.cellsInShape[y][x - 1]) {
           graphics.beginPath()
           graphics.moveTo(x * GRID_SIZE, y * GRID_SIZE)
           graphics.lineTo(x * GRID_SIZE, (y + 1) * GRID_SIZE)
@@ -925,18 +1042,27 @@ export class Maze {
     }
 
     // Check for walls in each direction
+    // Bitwise operations are used here for efficient wall checking:
+    // 1. The bitwise AND (&) with a specific bit mask (1, 2, 4, or 8) checks if that bit is set
+    // 2. This is more efficient than storing wall information in separate variables or arrays
+    // 3. The NOT operator (!) inverts the result because a set bit means a passage (no wall)
+    //    while we want to return true if there IS a wall
     if (toX > fromX) {
-      // Moving right, check for right wall
-      return !(this.grid[fromY][fromX] & 2)
+      // Moving right, check for right wall (bit 1, value 2)
+      const hasRightPassage = this.grid[fromY][fromX] & 2
+      return !hasRightPassage
     } else if (toX < fromX) {
-      // Moving left, check for left wall
-      return !(this.grid[fromY][fromX] & 8)
+      // Moving left, check for left wall (bit 3, value 8)
+      const hasLeftPassage = this.grid[fromY][fromX] & 8
+      return !hasLeftPassage
     } else if (toY > fromY) {
-      // Moving down, check for bottom wall
-      return !(this.grid[fromY][fromX] & 4)
+      // Moving down, check for bottom wall (bit 2, value 4)
+      const hasBottomPassage = this.grid[fromY][fromX] & 4
+      return !hasBottomPassage
     } else {
-      // Moving up, check for top wall
-      return !(this.grid[fromY][fromX] & 1)
+      // Moving up, check for top wall (bit 0, value 1)
+      const hasTopPassage = this.grid[fromY][fromX] & 1
+      return !hasTopPassage
     }
   }
 
