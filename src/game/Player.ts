@@ -75,8 +75,24 @@ export class Player {
       const gameManager = GameManager.getInstance()
       gameManager.incrementLevel()
 
-      // Reset the current scene to generate a new maze for the next level
-      this.scene.scene.restart()
+      // Get the GridScene and call generateRandomGridColor with tweening enabled
+      const gridScene = this.scene.scene.get('GridScene') as any
+      if (
+        gridScene &&
+        typeof gridScene.generateRandomGridColor === 'function'
+      ) {
+        gridScene.generateRandomGridColor(true) // Enable tweening for smooth color transition
+
+        // Delay scene restart to allow the tween to complete
+        this.scene.time.delayedCall(1100, () => {
+          // 1100ms = tween duration (1000ms) + small buffer
+          // Reset the current scene to generate a new maze for the next level
+          this.scene.scene.restart()
+        })
+      } else {
+        // Fallback if gridScene is not available
+        this.scene.scene.restart()
+      }
     }
   }
 
