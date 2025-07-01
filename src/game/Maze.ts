@@ -1,6 +1,8 @@
 import Phaser from 'phaser'
 import { COLOR_EMPTY, COLOR_END, COLOR_MAZE, GRID_SIZE } from './constants'
 import { MazeShapes } from '@/lib/maze/MazeShapes'
+import { EventBus } from '@/lib/shared/EventBus'
+import { EVENT_MAX_TILES_UPDATED } from '@/lib/shared/EventBusEvents'
 
 export class Maze {
   cols: number
@@ -29,6 +31,9 @@ export class Maze {
     this.totalCells =
       totalCells <= 0 ? maxCells : Math.min(totalCells, maxCells)
 
+    // Emit an event with the maximum number of tiles
+    EventBus.emit(EVENT_MAX_TILES_UPDATED, this.totalCells)
+
     // Always use the maximum dimensions for the grid
     this.cols = maxCols
     this.rows = maxRows
@@ -40,6 +45,35 @@ export class Maze {
 
     // Generate a shape for the maze
     this.generateShape()
+
+    // Calculate the minimum required distance (at least half the total cells)
+    const minRequiredDistance = Math.ceil(this.totalCells / 2)
+
+    // Ensure the shape has enough cells to potentially satisfy the minimum distance requirement
+    // We need at least minRequiredDistance + 1 cells (for start and path to end)
+    let cellsInShape = this.countCellsInShape()
+
+    // If we have fewer than 2 cells, force at least 2 cells to ensure we have a start and end
+    if (cellsInShape < 2) {
+      console.log(
+        `Shape has only ${cellsInShape} cells, forcing at least 2 cells`
+      )
+      // Add the center cell and one adjacent cell
+      const centerX = Math.floor(this.cols / 2)
+      const centerY = Math.floor(this.rows / 2)
+      this.cellsInShape[centerY][centerX] = true
+      this.cellsInShape[centerY][centerX + 1] = true
+      cellsInShape = this.countCellsInShape()
+    }
+
+    // Now expand to meet the minimum distance requirement
+    // The minimum number of cells should be at least half the total available cells
+    if (cellsInShape < minRequiredDistance) {
+      console.log(
+        `Shape has only ${cellsInShape} cells, expanding to at least ${minRequiredDistance} cells`
+      )
+      this.expandShape(minRequiredDistance)
+    }
 
     // Pick a random start cell within the shape
     const validCells = this.getValidCellsInShape()
@@ -54,9 +88,6 @@ export class Maze {
       const startIdx = Math.floor(Math.random() * validCells.length)
       this.start = { ...validCells[startIdx] }
     }
-
-    // Calculate the minimum required distance (at least half the total cells)
-    const minRequiredDistance = Math.ceil(this.totalCells / 2)
 
     // Function to calculate the shortest path distance between two points
     const calculateDistance = (
@@ -74,8 +105,8 @@ export class Maze {
       const dx = [0, 1, 0, -1]
       const dy = [-1, 0, 1, 0]
 
-      while (head < queue.length) {
-        const [x, y, distance] = queue[head++]
+      while (queue.length > 0) {
+        const [x, y, distance] = queue.shift()!
 
         if (x === endX && y === endY) {
           return distance
@@ -116,7 +147,7 @@ export class Maze {
       this.cellsInShape[this.end.y][this.end.x] = true
     } else {
       // Find candidates that are at least minRequiredDistance away
-      const distantCandidates = endCandidates.filter(cell => {
+      let distantCandidates = endCandidates.filter(cell => {
         const distance = calculateDistance(
           this.start.x,
           this.start.y,
@@ -126,12 +157,64 @@ export class Maze {
         return distance >= minRequiredDistance && distance !== -1
       })
 
+      // If no distant candidates, expand the shape and try again
+      if (distantCandidates.length === 0) {
+        console.log(
+          `No candidates with distance >= ${minRequiredDistance} found. Expanding shape...`
+        )
+
+        // Keep expanding the shape until we find a candidate with sufficient distance
+        let attempts = 0
+        const maxAttempts = 10 // Limit the number of attempts to prevent infinite loops
+
+        while (distantCandidates.length === 0 && attempts < maxAttempts) {
+          attempts++
+
+          // Expand the shape by adding more cells
+          this.expandShape(
+            this.countCellsInShape() + Math.ceil(this.totalCells * 0.1)
+          ) // Add 10% more cells
+
+          // Get updated valid cells
+          const updatedValidCells = this.getValidCellsInShape()
+          const updatedEndCandidates = updatedValidCells.filter(
+            cell => !(cell.x === this.start.x && cell.y === this.start.y)
+          )
+
+          // Check for distant candidates again
+          distantCandidates = updatedEndCandidates.filter(cell => {
+            const distance = calculateDistance(
+              this.start.x,
+              this.start.y,
+              cell.x,
+              cell.y
+            )
+            return distance >= minRequiredDistance && distance !== -1
+          })
+
+          console.log(
+            `Attempt ${attempts}: Found ${distantCandidates.length} candidates with sufficient distance`
+          )
+        }
+      }
+
       if (distantCandidates.length > 0) {
         // Pick a random end cell from the distant candidates
         const endIdx = Math.floor(Math.random() * distantCandidates.length)
         this.end = { ...distantCandidates[endIdx] }
+
+        // Verify the actual distance
+        const finalDistance = calculateDistance(
+          this.start.x,
+          this.start.y,
+          this.end.x,
+          this.end.y
+        )
+        console.log(
+          `Selected end cell with distance ${finalDistance} (required: ${minRequiredDistance})`
+        )
       } else {
-        // If no distant candidates, pick the farthest one
+        // If still no distant candidates after expansion, pick the farthest one
         let maxDistance = -1
         let farthestCell = endCandidates[0]
 
@@ -166,7 +249,8 @@ export class Maze {
       MazeShapes.SHAPE_PARABOLA,
       MazeShapes.SHAPE_RANDOM,
       MazeShapes.SHAPE_HEART,
-      MazeShapes.SHAPE_SPIRAL
+      MazeShapes.SHAPE_SPIRAL,
+      MazeShapes.SHAPE_DONUT
     ]
     const shapeType = shapeTypes[Math.floor(Math.random() * shapeTypes.length)]
 
@@ -178,7 +262,9 @@ export class Maze {
     // We want to ensure we have approximately totalCells cells in the shape
     const maxRadius = Math.min(this.cols, this.rows) / 2
     const targetRadius = Math.sqrt(this.totalCells / Math.PI)
-    const radius = Math.min(targetRadius, maxRadius)
+    // Ensure radius is at least 2 to avoid shapes with only one cell
+    const minRadius = 2
+    const radius = Math.max(minRadius, Math.min(targetRadius, maxRadius))
 
     // Generate the selected shape using the MazeShapes library
     switch (shapeType) {
@@ -211,6 +297,15 @@ export class Maze {
         break
       case MazeShapes.SHAPE_SPIRAL:
         this.cellsInShape = MazeShapes.generateSpiralShape(
+          this.rows,
+          this.cols,
+          centerX,
+          centerY,
+          radius
+        )
+        break
+      case MazeShapes.SHAPE_DONUT:
+        this.cellsInShape = MazeShapes.generateDonutShape(
           this.rows,
           this.cols,
           centerX,
@@ -435,7 +530,7 @@ export class Maze {
           // 2. The bitwise AND checks if that bit is set in the cell's value
           // 3. This is checking if there's a passage from the current cell to the neighbor
           // This approach is more efficient than storing connectivity in a separate data structure
-          const hasPassage = maze[y][x] & [TOP, RIGHT, BOTTOM, LEFT][dir]
+          const hasPassage = maze[y][x] & (1 << dir)
 
           if (
             nx >= 0 &&

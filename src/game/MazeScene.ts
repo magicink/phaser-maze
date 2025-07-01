@@ -4,6 +4,8 @@ import { Player } from './Player'
 import { Maze } from './Maze'
 import { GameManager } from './GameManager'
 
+const MAZE_CELL_COUNT = 250 // Constant for the number of cells in the maze
+
 let player: Player | null = null
 let maze: Maze | null = null
 
@@ -18,7 +20,7 @@ export class MazeScene extends Phaser.Scene {
       this,
       this.scale.width,
       this.scale.height,
-      400 // Using more cells for better shape visibility
+      MAZE_CELL_COUNT // Using constant for better readability
     )
     maze.render()
     player = new Player(this)
@@ -37,7 +39,7 @@ export class MazeScene extends Phaser.Scene {
       this,
       this.scale.width,
       this.scale.height,
-      400 // Using more cells for better shape visibility
+      MAZE_CELL_COUNT // Using constant for better readability
     )
     maze.render()
     if (player) player.redraw()

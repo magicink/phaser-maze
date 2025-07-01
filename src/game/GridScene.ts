@@ -6,11 +6,14 @@ const COLOR_BG = 0xf8f9fa // Very light grey
 
 export class GridScene extends Phaser.Scene {
   private gridColor: number = 0xc7d6e6 // Initial color will be randomized
+  private graphics!: Phaser.GameObjects.Graphics
   constructor() {
     super({ key: 'GridScene' })
   }
 
   init() {
+    // Initialize graphics object
+    this.graphics = this.add.graphics()
     // Generate a new random color each time the scene is initialized
     this.generateRandomGridColor()
     this.drawGrid()
@@ -75,36 +78,35 @@ export class GridScene extends Phaser.Scene {
     camera.setZoom(1)
     camera.setScroll(0, 0)
 
-    this.children.removeAll()
     this.graphics.clear() // Clear the existing graphics
     this.graphics.fillStyle(COLOR_BG, 1)
     this.graphics.fillRect(0, 0, width, height)
-    graphics.lineStyle(1, this.gridColor, 1)
+    this.graphics.lineStyle(1, this.gridColor, 1)
     // Draw only lines that are fully within the canvas
     for (let x = 0; x < width; x += GRID_SIZE) {
-      graphics.beginPath()
-      graphics.moveTo(x, 0)
-      graphics.lineTo(x, height)
-      graphics.strokePath()
+      this.graphics.beginPath()
+      this.graphics.moveTo(x, 0)
+      this.graphics.lineTo(x, height)
+      this.graphics.strokePath()
     }
     for (let y = 0; y < height; y += GRID_SIZE) {
-      graphics.beginPath()
-      graphics.moveTo(0, y)
-      graphics.lineTo(width, y)
-      graphics.strokePath()
+      this.graphics.beginPath()
+      this.graphics.moveTo(0, y)
+      this.graphics.lineTo(width, y)
+      this.graphics.strokePath()
     }
     // Draw the right and bottom border if not already drawn
     if (width % GRID_SIZE === 0) {
-      graphics.beginPath()
-      graphics.moveTo(width - 1, 0)
-      graphics.lineTo(width - 1, height)
-      graphics.strokePath()
+      this.graphics.beginPath()
+      this.graphics.moveTo(width - 1, 0)
+      this.graphics.lineTo(width - 1, height)
+      this.graphics.strokePath()
     }
     if (height % GRID_SIZE === 0) {
-      graphics.beginPath()
-      graphics.moveTo(0, height - 1)
-      graphics.lineTo(width, height - 1)
-      graphics.strokePath()
+      this.graphics.beginPath()
+      this.graphics.moveTo(0, height - 1)
+      this.graphics.lineTo(width, height - 1)
+      this.graphics.strokePath()
     }
   }
 

@@ -11,6 +11,7 @@ export class MazeShapes {
   static readonly SHAPE_HEART = 'heart'
   static readonly SHAPE_SPIRAL = 'spiral'
   static readonly SHAPE_RANDOM = 'random'
+  static readonly SHAPE_DONUT = 'donut'
   /**
    * Generate a blob-like shape (irregular circle)
    * @param rows Number of rows in the grid
@@ -250,12 +251,68 @@ export class MazeShapes {
   }
 
   /**
-   * Expand a maze shape to reach the target cell count
-   * @param cellsInShape Current shape as 2D boolean array
+   * Generate a donut shape
    * @param rows Number of rows in the grid
    * @param cols Number of columns in the grid
-   * @param targetCellCount Target number of cells in the shape
-   * @returns The expanded shape as a 2D boolean array
+   * @param centerX Center X coordinate
+   * @param centerY Center Y coordinate
+   * @param radius Radius of the shape
+   * @returns A 2D boolean array representing the shape
+   */
+  static generateDonutShape(
+    rows: number,
+    cols: number,
+    centerX: number,
+    centerY: number,
+    radius: number
+  ): boolean[][] {
+    const cellsInShape = Array.from({ length: rows }, () =>
+      Array(cols).fill(false)
+    )
+
+    // The outer radius is the provided radius
+    const outerRadius = radius
+    // The inner radius is a fraction of the outer radius
+    const innerRadius = radius * 0.4
+
+    for (let y = 0; y < rows; y++) {
+      for (let x = 0; x < cols; x++) {
+        // Calculate distance from the center
+        const dx = x - centerX
+        const dy = y - centerY
+        const distance = Math.sqrt(dx * dx + dy * dy)
+
+        // Add some noise to create an irregular donut
+        const outerNoise = Math.random() * radius * 0.2
+        const innerNoise = Math.random() * innerRadius * 0.2
+
+        // Include cell if it's between the inner and outer radius (with noise)
+        if (
+          distance <= outerRadius + outerNoise &&
+          distance >= innerRadius - innerNoise
+        ) {
+          cellsInShape[y][x] = true
+        }
+      }
+    }
+
+    return cellsInShape
+  }
+
+  /**
+   * Expands the given shape by adding cells to it until the target cell count is reached.
+   *
+   * This method works by identifying the border cells of the current shape and adding
+   * new cells to the shape from the border. If no border cells are found, it will attempt
+   * to add cells in a spiral pattern around the existing shape.
+   *
+   * @param cellsInShape A 2D boolean array representing the current shape. `true` indicates
+   *                     that the cell is part of the shape, and `false` indicates it is not.
+   * @param rows The total number of rows in the grid.
+   * @param cols The total number of columns in the grid.
+   * @param targetCellCount The desired number of cells in the shape. The method will expand
+   *                        the shape until this count is reached.
+   * @returns A new 2D boolean array representing the expanded shape.
    */
   static expandShape(
     cellsInShape: boolean[][],
@@ -282,6 +339,13 @@ export class MazeShapes {
       return count
     }
 
+    // If there are no cells in the shape, add at least one
+    if (countCellsInShape() === 0) {
+      const centerX = Math.floor(cols / 2)
+      const centerY = Math.floor(rows / 2)
+      result[centerY][centerX] = true
+    }
+
     while (countCellsInShape() < targetCellCount) {
       const borderCells: [number, number][] = []
 
@@ -303,6 +367,77 @@ export class MazeShapes {
               ) {
                 borderCells.push([x, y])
                 break
+              }
+            }
+          }
+        }
+      }
+
+      // If no border cells found but we still need more cells,
+      // add cells in a spiral pattern around existing cells
+      if (borderCells.length === 0) {
+        // Find any existing cell
+        let existingCellFound = false
+        let existingX = 0,
+          existingY = 0
+
+        for (let y = 0; y < rows && !existingCellFound; y++) {
+          for (let x = 0; x < cols && !existingCellFound; x++) {
+            if (result[y][x]) {
+              existingX = x
+              existingY = y
+              existingCellFound = true
+              break
+            }
+          }
+        }
+
+        // Add a cell adjacent to the existing one
+        for (let dir = 0; dir < 8 && borderCells.length === 0; dir++) {
+          const nx = existingX + DX[dir]
+          const ny = existingY + DY[dir]
+
+          if (nx >= 0 && nx < cols && ny >= 0 && ny < rows && !result[ny][nx]) {
+            borderCells.push([nx, ny])
+          }
+        }
+
+        // If still no border cells, just add cells in a spiral pattern from center
+        if (borderCells.length === 0) {
+          const centerX = Math.floor(cols / 2)
+          const centerY = Math.floor(rows / 2)
+
+          // Simple spiral pattern
+          for (
+            let radius = 1;
+            radius < Math.max(rows, cols) && borderCells.length === 0;
+            radius++
+          ) {
+            for (
+              let dx = -radius;
+              dx <= radius && borderCells.length === 0;
+              dx++
+            ) {
+              for (
+                let dy = -radius;
+                dy <= radius && borderCells.length === 0;
+                dy++
+              ) {
+                // Only consider cells on the perimeter of the square
+                if (Math.abs(dx) === radius || Math.abs(dy) === radius) {
+                  const nx = centerX + dx
+                  const ny = centerY + dy
+
+                  if (
+                    nx >= 0 &&
+                    nx < cols &&
+                    ny >= 0 &&
+                    ny < rows &&
+                    !result[ny][nx]
+                  ) {
+                    borderCells.push([nx, ny])
+                  }
+                }
               }
             }
           }
