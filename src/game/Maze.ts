@@ -14,12 +14,24 @@ export class Maze {
   end: { x: number; y: number } = { x: 0, y: 0 }
   totalCells: number // How many cells should be used in the maze
   cellsInShape: boolean[][] // Tracks which cells are part of the chosen shape
+  /**
+   * X coordinate to use as the center of the generated shape.
+   * This can be anywhere on the grid and defaults to a random position.
+   */
+  centerX: number
+  /**
+   * Y coordinate to use as the center of the generated shape.
+   * This can be anywhere on the grid and defaults to a random position.
+   */
+  centerY: number
 
   constructor(
     scene: Phaser.Scene,
     width: number,
     height: number,
-    totalCells: number = 0
+    totalCells: number = 0,
+    centerX?: number,
+    centerY?: number
   ) {
     this.scene = scene
 
@@ -38,6 +50,17 @@ export class Maze {
     // Always use the maximum dimensions for the grid
     this.cols = maxCols
     this.rows = maxRows
+
+    // Determine the center of the maze. If coordinates are provided they are
+    // clamped to the grid, otherwise pick a random location.
+    this.centerX =
+      centerX !== undefined
+        ? Phaser.Math.Clamp(Math.floor(centerX), 0, this.cols - 1)
+        : Math.floor(Math.random() * this.cols)
+    this.centerY =
+      centerY !== undefined
+        ? Phaser.Math.Clamp(Math.floor(centerY), 0, this.rows - 1)
+        : Math.floor(Math.random() * this.rows)
 
     // Initialize the cellsInShape array with all cells set to false
     this.cellsInShape = Array.from({ length: this.rows }, () =>
@@ -59,11 +82,10 @@ export class Maze {
       console.log(
         `Shape has only ${cellsInShape} cells, forcing at least 2 cells`
       )
-      // Add the center cell and one adjacent cell
-      const centerX = Math.floor(this.cols / 2)
-      const centerY = Math.floor(this.rows / 2)
-      this.cellsInShape[centerY][centerX] = true
-      this.cellsInShape[centerY][centerX + 1] = true
+      // Add the chosen center cell and one adjacent cell
+      this.cellsInShape[this.centerY][this.centerX] = true
+      const adjX = Math.min(this.centerX + 1, this.cols - 1)
+      this.cellsInShape[this.centerY][adjX] = true
       cellsInShape = this.countCellsInShape()
     }
 
@@ -81,8 +103,8 @@ export class Maze {
     if (validCells.length === 0) {
       // Fallback if no valid cells in shape (shouldn't happen)
       this.start = {
-        x: Math.floor(this.cols / 2),
-        y: Math.floor(this.rows / 2)
+        x: this.centerX,
+        y: this.centerY
       }
       this.cellsInShape[this.start.y][this.start.x] = true
     } else {
@@ -255,16 +277,20 @@ export class Maze {
     ]
     const shapeType = shapeTypes[Math.floor(Math.random() * shapeTypes.length)]
 
-    // Calculate center of the grid
-    const centerX = Math.floor(this.cols / 2)
-    const centerY = Math.floor(this.rows / 2)
+    // Use the configured center of the maze
+    const centerX = this.centerX
+    const centerY = this.centerY
 
     // Calculate the size of the shape based on totalCells
     // We want to ensure we have approximately totalCells cells in the shape
-    const maxRadius = Math.min(this.cols, this.rows) / 2
+    const distLeft = centerX
+    const distRight = this.cols - 1 - centerX
+    const distTop = centerY
+    const distBottom = this.rows - 1 - centerY
+    const maxRadius = Math.min(distLeft, distRight, distTop, distBottom)
     const targetRadius = Math.sqrt(this.totalCells / Math.PI)
-    // Ensure radius is at least 2 to avoid shapes with only one cell
-    const minRadius = 2
+    // Ensure the radius is at least 1 but never larger than the available space
+    const minRadius = 1
     const radius = Math.max(minRadius, Math.min(targetRadius, maxRadius))
 
     // Generate the selected shape using the MazeShapes library
