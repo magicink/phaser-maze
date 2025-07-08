@@ -26,6 +26,7 @@
     "dev": "next dev -p 8080",
     "dev-nolog": "next dev -p 8080",
     "prepare": "husky",
+    "release": "bunx release-please release-pr && bunx release-please github-release",
     "test": "jest"
   },
   "lint-staged": {
@@ -52,6 +53,7 @@
     "jest-environment-jsdom": "^30.0.4",
     "lint-staged": "^15.4.3",
     "prettier": "^3.5.0",
+    "release-please": "^17.1.1",
     "sort-package-json": "^2.14.0",
     "tailwindcss": "^4.0.5",
     "ts-jest": "^29.4.0",
