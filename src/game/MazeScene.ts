@@ -15,6 +15,9 @@ export class MazeScene extends Phaser.Scene {
   }
 
   init() {
+    if (maze) {
+      maze.destroy()
+    }
     // Create maze with more cells to make shapes visible
     maze = new Maze(
       this,
@@ -34,6 +37,9 @@ export class MazeScene extends Phaser.Scene {
 
   handleResize(gameSize: Phaser.Structs.Size) {
     this.cameras.main.setSize(gameSize.width, gameSize.height)
+    if (maze) {
+      maze.destroy()
+    }
     // Create a maze with more cells to make shapes visible
     maze = new Maze(
       this,
