@@ -25,6 +25,7 @@ This template has been updated for:
 | `npm run build` | Create a production build in the `dist` folder |
 | `npm run dev-nolog` | Launch a development web server without sending anonymous data (see "About log.mjs" below) |
 | `npm run build-nolog` | Create a production build in the `dist` folder without sending anonymous data (see "About log.mjs" below) |
+| `npm run release` | Create a GitHub release using release-please |
 
 ## Writing Code
 
