@@ -14,22 +14,22 @@ This template has been updated for:
 
 ## Requirements
 
-[Node.js](https://nodejs.org) is required to install dependencies and run scripts via `npm`.
+[Bun](https://bun.sh) is required to install dependencies and run scripts.
 
 ## Available Commands
 
 | Command | Description |
 |---------|-------------|
-| `npm install` | Install project dependencies |
-| `npm run dev` | Launch a development web server |
-| `npm run build` | Create a production build in the `dist` folder |
-| `npm run dev-nolog` | Launch a development web server without sending anonymous data (see "About log.mjs" below) |
-| `npm run build-nolog` | Create a production build in the `dist` folder without sending anonymous data (see "About log.mjs" below) |
-| `npm run release` | Create a GitHub release using release-please |
+| `bun install` | Install project dependencies |
+| `bun run dev` | Launch a development web server |
+| `bun run build` | Create a production build in the `dist` folder |
+| `bun run dev-nolog` | Launch a development web server without sending anonymous data (see "About log.mjs" below) |
+| `bun run build-nolog` | Create a production build in the `dist` folder without sending anonymous data (see "About log.mjs" below) |
+| `bun run release` | Create a GitHub release using release-please |
 
 ## Writing Code
 
-After cloning the repo, run `npm install` from your project directory. Then, you can start the local development server by running `npm run dev`.
+After cloning the repo, run `bun install` from your project directory. Then, you can start the local development server by running `bun run dev`.
 
 The local development server runs on `http://localhost:8080` by default. Please see the Next.js documentation if you wish to change this, or add SSL support.
 
@@ -150,11 +150,11 @@ preload ()
 }
 ```
 
-When you issue the `npm run build` command, all static assets are automatically copied to the `dist/assets` folder.
+When you issue the `bun run build` command, all static assets are automatically copied to the `dist/assets` folder.
 
 ## Deploying to Production
 
-After you run the `npm run build` command, your code will be built into a single bundle and saved to the `dist` folder, along with any other assets your project imported, or stored in the public assets folder.
+After you run the `bun run build` command, your code will be built into a single bundle and saved to the `dist` folder, along with any other assets your project imported, or stored in the public assets folder.
 
 In order to deploy your game, you will need to upload *all* of the contents of the `dist` folder to a public facing web server.
 
@@ -162,7 +162,7 @@ In order to deploy your game, you will need to upload *all* of the contents of t
 
 ### Next.js
 
-If you want to customize your build, such as adding plugin (i.e. for loading CSS or fonts), you can modify the `next.config.mjs` file for cross-project changes, or you can modify and/or create new configuration files and target them in specific npm tasks inside of `package.json`. Please see the [Next.js documentation](https://nextjs.org/docs) for more information.
+If you want to customize your build, such as adding plugin (i.e. for loading CSS or fonts), you can modify the `next.config.mjs` file for cross-project changes, or you can modify and/or create new configuration files and target them in specific bun tasks inside of `package.json`. Please see the [Next.js documentation](https://nextjs.org/docs) for more information.
 
 ## About log.mjs
 
@@ -179,13 +179,13 @@ However, if you don't want to send any data, you can use these commands instead:
 Dev:
 
 ```bash
-npm run dev-nolog
+bun run dev-nolog
 ```
 
 Build:
 
 ```bash
-npm run build-nolog
+bun run build-nolog
 ```
 
 Or, to disable the log entirely, simply delete the file `log.mjs` and remove the call to it in the `scripts` section of `package.json`:
