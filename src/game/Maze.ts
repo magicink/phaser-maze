@@ -9,6 +9,7 @@ export class Maze {
   rows: number
   grid: number[][]
   scene: Phaser.Scene
+  graphics: Phaser.GameObjects.Graphics | null = null
   start: { x: number; y: number } = { x: 0, y: 0 }
   end: { x: number; y: number } = { x: 0, y: 0 }
   totalCells: number // How many cells should be used in the maze
@@ -1030,7 +1031,11 @@ export class Maze {
   }
 
   render() {
-    const graphics = this.scene.add.graphics()
+    if (this.graphics) {
+      this.graphics.destroy()
+    }
+    this.graphics = this.scene.add.graphics()
+    const graphics = this.graphics
 
     // First render any cells that are not part of the shape with a light background
     graphics.fillStyle(COLOR_EMPTY, 0.5)
@@ -1181,5 +1186,12 @@ export class Maze {
 
     // Then check if there's no wall between the cells
     return !this.hasWall(x, y, newX, newY)
+  }
+
+  destroy() {
+    if (this.graphics) {
+      this.graphics.destroy()
+      this.graphics = null
+    }
   }
 }
