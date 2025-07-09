@@ -5,6 +5,7 @@ import {
   EVENT_STEP_COUNT_UPDATED,
   EVENT_LEVEL_UPDATED
 } from './lib/shared/EventBusEvents'
+import { GameManager } from './game/GameManager'
 
 function App() {
   const phaserRef = useRef<IRefPhaserGame | null>(null)
@@ -32,6 +33,19 @@ function App() {
     }
   }, [])
 
+  const handleReset = () => {
+    const gameManager = GameManager.getInstance()
+    gameManager.resetLevel()
+    gameManager.resetSteps()
+
+    const game = phaserRef.current?.game
+    if (game) {
+      game.scene.stop('MazeScene')
+      game.scene.stop('GridScene')
+      game.scene.start('GridScene')
+    }
+  }
+
   return (
     <div id='app'>
       <div
@@ -52,6 +66,20 @@ function App() {
       >
         <div className='level-counter'>Level: {level}</div>
         <div className='step-counter'>Steps: {stepCount}</div>
+        <button
+          className='reset-button'
+          style={{
+            backgroundColor: '#444',
+            color: 'white',
+            border: 'none',
+            borderRadius: '3px',
+            padding: '0 8px',
+            cursor: 'pointer'
+          }}
+          onClick={handleReset}
+        >
+          Reset
+        </button>
       </div>
       <PhaserGame ref={phaserRef} />
     </div>
