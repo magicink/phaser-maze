@@ -48,34 +48,11 @@ function App() {
 
   return (
     <div id='app'>
-      <div
-        className='game-stats'
-        style={{
-          position: 'absolute',
-          top: '10px',
-          left: '10px',
-          padding: '10px',
-          backgroundColor: 'rgba(0, 0, 0, 0.7)',
-          color: 'white',
-          borderRadius: '5px',
-          fontFamily: 'Arial, sans-serif',
-          zIndex: 100,
-          display: 'flex',
-          gap: '15px'
-        }}
-      >
+      <div className='game-stats absolute top-2.5 left-2.5 p-2.5 bg-black/70 text-white rounded font-sans z-50 flex gap-4'>
         <div className='level-counter'>Level: {level}</div>
         <div className='step-counter'>Steps: {stepCount}</div>
         <button
-          className='reset-button'
-          style={{
-            backgroundColor: '#444',
-            color: 'white',
-            border: 'none',
-            borderRadius: '3px',
-            padding: '0 8px',
-            cursor: 'pointer'
-          }}
+          className='reset-button bg-gray-700 text-white border-none rounded px-2 cursor-pointer'
           onClick={handleReset}
         >
           Reset
