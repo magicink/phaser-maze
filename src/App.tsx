@@ -61,6 +61,7 @@ function App() {
         <button
           className='reset-button bg-gray-700 text-white border-none rounded px-2 py-0.5 cursor-pointer text-gray-50 bg-transparent font-sans'
           onClick={handleReset}
+          type='button'
         >
           Reset
         </button>
