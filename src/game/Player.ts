@@ -65,7 +65,23 @@ export class Player {
 
       // Check if player has reached the exit
       this.checkForLevelCompletion(maze)
+    } else {
+      this.squish(dx, dy)
     }
+  }
+
+  private squish(dx: number, dy: number) {
+    if (!this.rect) return
+    const targetScaleX = dx !== 0 ? 0.6 : 1
+    const targetScaleY = dy !== 0 ? 0.6 : 1
+    this.scene.tweens.add({
+      targets: this.rect,
+      scaleX: targetScaleX,
+      scaleY: targetScaleY,
+      duration: 60,
+      yoyo: true,
+      ease: 'Quad.easeOut'
+    })
   }
 
   checkForLevelCompletion(maze: Maze): void {
