@@ -1,7 +1,10 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
   output: 'export',
-  distDir: 'dist'
+  distDir: 'dist',
+  experimental: {
+    reactCompiler: true
+  }
 }
 
 export default nextConfig
