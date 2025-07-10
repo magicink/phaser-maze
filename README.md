@@ -7,7 +7,8 @@ This is a Phaser 3 project template that uses the Next.js framework. It includes
 This template has been updated for:
 
 - [Phaser 3.87.0](https://github.com/phaserjs/phaser)
-- [Next.js 14.2.3](https://github.com/vercel/next.js)
+- [Next.js 15.4.0](https://github.com/vercel/next.js)
+- [React 19](https://github.com/facebook/react)
 - [TypeScript 5](https://github.com/microsoft/TypeScript)
 
 ![screenshot](screenshot.png)
@@ -18,14 +19,14 @@ This template has been updated for:
 
 ## Available Commands
 
-| Command | Description |
-|---------|-------------|
-| `bun install` | Install project dependencies |
-| `bun run dev` | Launch a development web server |
-| `bun run build` | Create a production build in the `dist` folder |
-| `bun run dev-nolog` | Launch a development web server without sending anonymous data (see "About log.mjs" below) |
+| Command               | Description                                                                                               |
+| --------------------- | --------------------------------------------------------------------------------------------------------- |
+| `bun install`         | Install project dependencies                                                                              |
+| `bun run dev`         | Launch a development web server                                                                           |
+| `bun run build`       | Create a production build in the `dist` folder                                                            |
+| `bun run dev-nolog`   | Launch a development web server without sending anonymous data (see "About log.mjs" below)                |
 | `bun run build-nolog` | Create a production build in the `dist` folder without sending anonymous data (see "About log.mjs" below) |
-| `bun run release` | Create a GitHub release using release-please |
+| `bun run release`     | Create a GitHub release using release-please                                                              |
 
 ## Writing Code
 
@@ -50,6 +51,7 @@ We have provided a default project structure to get you started. This is as foll
 - `src/game/scenes/` - The Phaser Scenes are in this folder.
 - `public/favicon.png` - The default favicon for the project.
 - `public/assets` - Contains the static assets used by the game.
+
 ## React Bridge
 
 The `PhaserGame.tsx` component is the bridge between React and Phaser. It initializes the Phaser game and passes events between the two.
@@ -58,16 +60,16 @@ To communicate between React and Phaser, you can use the **EventBus.js** file. T
 
 ```js
 // In React
-import { EventBus } from './EventBus';
+import { EventBus } from './EventBus'
 
 // Emit an event
-EventBus.emit('event-name', data);
+EventBus.emit('event-name', data)
 
 // In Phaser
 // Listen for an event
-EventBus.on('event-name', (data) => {
-    // Do something with the data
-});
+EventBus.on('event-name', data => {
+  // Do something with the data
+})
 ```
 
 In addition to this, the `PhaserGame` component exposes the Phaser game instance along with the most recently active Phaser Scene using React forwardRef.
@@ -82,22 +84,18 @@ You can get the current Phaser Scene from the component event `"current-active-s
 
 **Important**: When you add a new Scene to your game, make sure you expose to React by emitting the `"current-scene-ready"` event via the `EventBus`, like this:
 
-
 ```ts
-class MyScene extends Phaser.Scene
-{
-    constructor ()
-    {
-        super('MyScene');
-    }
+class MyScene extends Phaser.Scene {
+  constructor() {
+    super('MyScene')
+  }
 
-    create ()
-    {
-        // Your Game Objects and logic here
+  create() {
+    // Your Game Objects and logic here
 
-        // At the end of create method:
-        EventBus.emit('current-scene-ready', this);
-    }
+    // At the end of create method:
+    EventBus.emit('current-scene-ready', this)
+  }
 }
 ```
 
@@ -117,7 +115,7 @@ const ReactComponent = () => {
     const phaserRef = useRef<IRefPhaserGame>(); // you can access to this ref from phaserRef.current
 
     const onCurrentActiveScene = (scene: Phaser.Scene) => {
-    
+
         // This is invoked
 
     }
@@ -142,11 +140,11 @@ The `onCurrentActiveScene` callback will also be invoked whenever the the Phaser
 To load your static games files such as audio files, images, videos, etc place them into the `public/assets` folder. Then you can use this path in the Loader calls within Phaser:
 
 ```js
-preload ()
+preload()
 {
-    //  This is an example of loading a static image
-    //  from the public/assets folder:
-    this.load.image('background', 'assets/bg.png');
+  //  This is an example of loading a static image
+  //  from the public/assets folder:
+  this.load.image('background', 'assets/bg.png')
 }
 ```
 
@@ -156,7 +154,7 @@ When you issue the `bun run build` command, all static assets are automatically 
 
 After you run the `bun run build` command, your code will be built into a single bundle and saved to the `dist` folder, along with any other assets your project imported, or stored in the public assets folder.
 
-In order to deploy your game, you will need to upload *all* of the contents of the `dist` folder to a public facing web server.
+In order to deploy your game, you will need to upload _all_ of the contents of the `dist` folder to a public facing web server.
 
 ## Customizing the Template
 
