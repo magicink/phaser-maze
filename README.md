@@ -160,7 +160,7 @@ In order to deploy your game, you will need to upload _all_ of the contents of t
 
 ### Next.js
 
-If you want to customize your build, such as adding plugin (i.e. for loading CSS or fonts), you can modify the `next.config.mjs` file for cross-project changes, or you can modify and/or create new configuration files and target them in specific bun tasks inside of `package.json`. Please see the [Next.js documentation](https://nextjs.org/docs) for more information.
+If you want to customize your build, such as adding plugin (i.e. for loading CSS or fonts), you can modify the `next.config.ts` file for cross-project changes, or you can modify and/or create new configuration files and target them in specific bun tasks inside of `package.json`. Please see the [Next.js documentation](https://nextjs.org/docs) for more information.
 
 ## About log.mjs
 
