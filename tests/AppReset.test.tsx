@@ -3,6 +3,8 @@ import { render, fireEvent } from '@testing-library/react'
 
 const mockStop = jest.fn()
 const mockStart = jest.fn()
+const mockGetScene = jest.fn()
+const mockGenerateRandomGridColor = jest.fn()
 
 jest.mock('@/lib/shared/EventBus', () => ({
   EventBus: {
@@ -17,12 +19,28 @@ jest.mock('@/game/PhaserGame', () => {
   const PhaserGame = React.forwardRef((props, ref) => {
     if (typeof ref === 'function') {
       ref({
-        game: { scene: { stop: mockStop, start: mockStart } },
+        game: {
+          scene: {
+            stop: mockStop,
+            start: mockStart,
+            getScene: mockGetScene.mockReturnValue({
+              generateRandomGridColor: mockGenerateRandomGridColor
+            })
+          }
+        },
         scene: null
       })
     } else if (ref) {
       ref.current = {
-        game: { scene: { stop: mockStop, start: mockStart } },
+        game: {
+          scene: {
+            stop: mockStop,
+            start: mockStart,
+            getScene: mockGetScene.mockReturnValue({
+              generateRandomGridColor: mockGenerateRandomGridColor
+            })
+          }
+        },
         scene: null
       }
     }
@@ -50,9 +68,9 @@ describe('App reset button', () => {
 
     expect(resetLevel).toHaveBeenCalled()
     expect(resetSteps).toHaveBeenCalled()
+    expect(mockGetScene).toHaveBeenCalledWith('GridScene')
+    expect(mockGenerateRandomGridColor).toHaveBeenCalledWith(true)
     expect(mockStop).toHaveBeenCalledWith('MazeScene')
-    expect(mockStop).toHaveBeenCalledWith('GridScene')
-    expect(mockStart).toHaveBeenCalledWith('GridScene')
     expect(mockStart).toHaveBeenCalledWith('MazeScene')
   })
 })

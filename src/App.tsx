@@ -40,20 +40,26 @@ function App() {
 
     const game = phaserRef.current?.game
     if (game) {
+      const gridScene = game.scene.getScene('GridScene') as any
+      if (
+        gridScene &&
+        typeof gridScene.generateRandomGridColor === 'function'
+      ) {
+        gridScene.generateRandomGridColor(true)
+      }
+
       game.scene.stop('MazeScene')
-      game.scene.stop('GridScene')
-      game.scene.start('GridScene')
       game.scene.start('MazeScene')
     }
   }
 
   return (
     <div id='app'>
-      <div className='game-stats absolute top-2.5 left-2.5 p-2.5 bg-black/70 text-white rounded font-sans z-50 flex gap-4'>
+      <div className='game-stats absolute top-2.5 left-2.5 flex items-center gap-4 p-2.5 bg-neutral-900/80 text-white rounded font-sans z-50'>
         <div className='level-counter'>Level: {level}</div>
         <div className='step-counter'>Steps: {stepCount}</div>
         <button
-          className='reset-button bg-gray-700 text-white border-none rounded px-2 cursor-pointer'
+          className='reset-button bg-gray-700 text-white border-none rounded px-2 py-0.5 cursor-pointer'
           onClick={handleReset}
         >
           Reset
