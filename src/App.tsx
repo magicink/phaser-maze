@@ -55,11 +55,11 @@ function App() {
 
   return (
     <div id='app'>
-      <div className='game-stats absolute top-2.5 left-2.5 flex items-center gap-[4px] p-2.5 bg-gray-600 text-white rounded font-sans z-50'>
+      <div className='game-stats absolute top-2.5 left-2.5 flex items-center gap-[4px] p-2.5 bg-gray-600 text-gray-50 rounded-[4px] font-sans z-50 p-[4px]'>
         <div className='level-counter'>Level: {level}</div>
         <div className='step-counter'>Steps: {stepCount}</div>
         <button
-          className='reset-button bg-gray-700 text-white border-none rounded px-2 py-0.5 cursor-pointer'
+          className='reset-button bg-gray-700 text-white border-none rounded px-2 py-0.5 cursor-pointer text-gray-50 bg-transparent font-sans'
           onClick={handleReset}
         >
           Reset
