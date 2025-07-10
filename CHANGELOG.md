@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.2.0](https://github.com/magicink/phaser-maze/compare/phaser-sandbox-v1.1.0...phaser-sandbox-v1.2.0) (2025-07-10)
+
+
+### Features
+
+* enable react 19 compiler ([#24](https://github.com/magicink/phaser-maze/issues/24)) ([ee1fd59](https://github.com/magicink/phaser-maze/commit/ee1fd599a922e9abcee830245dd008c928040eb9))
+
 ## [1.1.0](https://github.com/magicink/phaser-maze/compare/phaser-sandbox-v1.0.0...phaser-sandbox-v1.1.0) (2025-07-10)
 
 
