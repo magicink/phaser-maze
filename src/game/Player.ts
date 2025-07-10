@@ -2,13 +2,14 @@ import Phaser from 'phaser'
 import { GameManager } from './GameManager'
 import { Maze } from './Maze'
 import { GridScene } from './GridScene'
-import { COLOR_PLAYER, GRID_SIZE } from '@/game/constants'
+import { COLOR_PLAYER, GRID_SIZE, MOVE_THROTTLE_MS } from '@/game/constants'
 
 export class Player {
   rect: Phaser.GameObjects.Rectangle | null = null
   scene: Phaser.Scene
   cell: { x: number; y: number } = { x: 0, y: 0 }
   private isSquishing = false
+  private lastMoveTime = 0
 
   constructor(scene: Phaser.Scene) {
     this.scene = scene
@@ -57,7 +58,9 @@ export class Player {
   }
 
   moveBy(dx: number, dy: number, maze: Maze) {
-    if (this.isSquishing) return
+    const now = Date.now()
+    if (now - this.lastMoveTime < MOVE_THROTTLE_MS || this.isSquishing) return
+    this.lastMoveTime = now
 
     const newX = this.cell.x + dx
     const newY = this.cell.y + dy
