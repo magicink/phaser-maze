@@ -1,5 +1,6 @@
 import React from 'react'
 import { render, fireEvent } from '@testing-library/react'
+import type { GameManager as GameManagerType } from '@/game/GameManager'
 
 const mockStop = jest.fn()
 const mockStart = jest.fn()
@@ -15,37 +16,45 @@ jest.mock('@/lib/shared/EventBus', () => ({
 }))
 
 jest.mock('@/game/PhaserGame', () => {
-  const React = require('react')
-  const PhaserGame = React.forwardRef((props, ref) => {
-    if (typeof ref === 'function') {
-      ref({
-        game: {
-          scene: {
-            stop: mockStop,
-            start: mockStart,
-            getScene: mockGetScene.mockReturnValue({
-              generateRandomGridColor: mockGenerateRandomGridColor
-            })
-          }
-        },
-        scene: null
-      })
-    } else if (ref) {
-      ref.current = {
-        game: {
-          scene: {
-            stop: mockStop,
-            start: mockStart,
-            getScene: mockGetScene.mockReturnValue({
-              generateRandomGridColor: mockGenerateRandomGridColor
-            })
-          }
-        },
-        scene: null
+  const React = require('react') as typeof import('react')
+  const PhaserGame = React.forwardRef<
+    { game: unknown; scene: unknown },
+    Record<string, never>
+  >(
+    (
+      _props: unknown,
+      ref: React.ForwardedRef<{ game: unknown; scene: unknown }>
+    ) => {
+      if (typeof ref === 'function') {
+        ref({
+          game: {
+            scene: {
+              stop: mockStop,
+              start: mockStart,
+              getScene: mockGetScene.mockReturnValue({
+                generateRandomGridColor: mockGenerateRandomGridColor
+              })
+            }
+          },
+          scene: null
+        })
+      } else if (ref) {
+        ref.current = {
+          game: {
+            scene: {
+              stop: mockStop,
+              start: mockStart,
+              getScene: mockGetScene.mockReturnValue({
+                generateRandomGridColor: mockGenerateRandomGridColor
+              })
+            }
+          },
+          scene: null
+        }
       }
+      return React.createElement('div')
     }
-    return React.createElement('div')
-  })
+  )
   return { PhaserGame, IRefPhaserGame: {} }
 })
 
@@ -59,7 +68,7 @@ describe('App reset button', () => {
     jest.spyOn(GameManager, 'getInstance').mockReturnValue({
       resetLevel,
       resetSteps
-    } as unknown as InstanceType<typeof GameManager>)
+    } as unknown as GameManagerType)
 
     const { getByRole } = render(<App />)
     const button = getByRole('button', { name: /reset/i })
