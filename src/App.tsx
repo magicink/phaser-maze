@@ -55,7 +55,7 @@ function App() {
 
   return (
     <div id='app'>
-      <div className='game-stats absolute top-2.5 left-2.5 flex items-center gap-4 p-2.5 bg-neutral-900/80 text-white rounded font-sans z-50'>
+      <div className='game-stats absolute top-2.5 left-2.5 flex items-center gap-[4px] p-2.5 bg-gray-600 text-white rounded font-sans z-50'>
         <div className='level-counter'>Level: {level}</div>
         <div className='step-counter'>Steps: {stepCount}</div>
         <button
