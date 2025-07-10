@@ -5,6 +5,7 @@ import {
   EVENT_STEP_COUNT_UPDATED,
   EVENT_LEVEL_UPDATED
 } from './lib/shared/EventBusEvents'
+import { GameManager } from './game/GameManager'
 
 function App() {
   const phaserRef = useRef<IRefPhaserGame | null>(null)
@@ -32,26 +33,37 @@ function App() {
     }
   }, [])
 
+  const handleReset = () => {
+    const gameManager = GameManager.getInstance()
+    gameManager.resetLevel()
+    gameManager.resetSteps()
+
+    const game = phaserRef.current?.game
+    if (game) {
+      const gridScene = game.scene.getScene('GridScene') as any
+      if (
+        gridScene &&
+        typeof gridScene.generateRandomGridColor === 'function'
+      ) {
+        gridScene.generateRandomGridColor(true)
+      }
+
+      game.scene.stop('MazeScene')
+      game.scene.start('MazeScene')
+    }
+  }
+
   return (
     <div id='app'>
-      <div
-        className='game-stats'
-        style={{
-          position: 'absolute',
-          top: '10px',
-          left: '10px',
-          padding: '10px',
-          backgroundColor: 'rgba(0, 0, 0, 0.7)',
-          color: 'white',
-          borderRadius: '5px',
-          fontFamily: 'Arial, sans-serif',
-          zIndex: 100,
-          display: 'flex',
-          gap: '15px'
-        }}
-      >
+      <div className='game-stats absolute top-2.5 left-2.5 flex items-center gap-4 p-2.5 bg-neutral-900/80 text-white rounded font-sans z-50'>
         <div className='level-counter'>Level: {level}</div>
         <div className='step-counter'>Steps: {stepCount}</div>
+        <button
+          className='reset-button bg-gray-700 text-white border-none rounded px-2 py-0.5 cursor-pointer'
+          onClick={handleReset}
+        >
+          Reset
+        </button>
       </div>
       <PhaserGame ref={phaserRef} />
     </div>
