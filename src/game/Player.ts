@@ -74,10 +74,13 @@ export class Player {
     if (!this.rect) return
     const targetScaleX = dx !== 0 ? 0.6 : 1
     const targetScaleY = dy !== 0 ? 0.6 : 1
+    const shift = GRID_SIZE * 0.25
     this.scene.tweens.add({
       targets: this.rect,
       scaleX: targetScaleX,
       scaleY: targetScaleY,
+      x: this.rect.x + dx * shift,
+      y: this.rect.y + dy * shift,
       duration: 60,
       yoyo: true,
       ease: 'Quad.easeOut'
