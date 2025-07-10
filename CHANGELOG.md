@@ -1,5 +1,19 @@
 # Changelog
 
+## [1.1.0](https://github.com/magicink/phaser-maze/compare/phaser-sandbox-v1.0.0...phaser-sandbox-v1.1.0) (2025-07-10)
+
+
+### Features
+
+* shift player during squish animation ([#21](https://github.com/magicink/phaser-maze/issues/21)) ([bf7a508](https://github.com/magicink/phaser-maze/commit/bf7a508e57f30251c1ce19a393c8bc630a8099ac))
+* squish player when hitting walls ([#19](https://github.com/magicink/phaser-maze/issues/19)) ([fac1b7c](https://github.com/magicink/phaser-maze/commit/fac1b7c903132c6b9d63f4cd8982c5b385b148fb))
+* throttle player movement and add tests ([#23](https://github.com/magicink/phaser-maze/issues/23)) ([2f96a7e](https://github.com/magicink/phaser-maze/commit/2f96a7eef3ef99eed18481e5f762219fb395394b))
+
+
+### Bug Fixes
+
+* pause input during squish animation ([#22](https://github.com/magicink/phaser-maze/issues/22)) ([1c86492](https://github.com/magicink/phaser-maze/commit/1c86492760eafa227a7317ea26ba84e4a4fb120e))
+
 ## 1.0.0 (2025-07-09)
 
 
