@@ -43,6 +43,7 @@ function App() {
       game.scene.stop('MazeScene')
       game.scene.stop('GridScene')
       game.scene.start('GridScene')
+      game.scene.start('MazeScene')
     }
   }
 
