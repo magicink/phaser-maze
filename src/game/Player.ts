@@ -8,6 +8,7 @@ export class Player {
   rect: Phaser.GameObjects.Rectangle | null = null
   scene: Phaser.Scene
   cell: { x: number; y: number } = { x: 0, y: 0 }
+  private isSquishing = false
 
   constructor(scene: Phaser.Scene) {
     this.scene = scene
@@ -56,6 +57,8 @@ export class Player {
   }
 
   moveBy(dx: number, dy: number, maze: Maze) {
+    if (this.isSquishing) return
+
     const newX = this.cell.x + dx
     const newY = this.cell.y + dy
     if (maze && maze.isMoveAllowed(this.cell.x, this.cell.y, dx, dy)) {
@@ -72,6 +75,7 @@ export class Player {
 
   private squish(dx: number, dy: number) {
     if (!this.rect) return
+    this.isSquishing = true
     const targetScaleX = dx !== 0 ? 0.6 : 1
     const targetScaleY = dy !== 0 ? 0.6 : 1
     const shift = GRID_SIZE * 0.25
@@ -83,7 +87,10 @@ export class Player {
       y: this.rect.y + dy * shift,
       duration: 60,
       yoyo: true,
-      ease: 'Quad.easeOut'
+      ease: 'Quad.easeOut',
+      onComplete: () => {
+        this.isSquishing = false
+      }
     })
   }
 
