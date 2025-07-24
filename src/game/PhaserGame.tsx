@@ -57,5 +57,10 @@ export const PhaserGame = forwardRef<
     }
   }, [currentActiveScene, ref])
 
-  return <div id='game-container'></div>
+  return (
+    <div
+      id='game-container'
+      className='w-screen h-screen overflow-hidden flex items-center justify-center'
+    ></div>
+  )
 })
