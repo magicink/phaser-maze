@@ -24,7 +24,7 @@ jobs:
             ${{ runner.os }}-bun-
       - uses: oven-sh/setup-bun@v1
         with:
-          bun-version: '1.2.14'
+          bun-version: 'latest'
       - run: bun install
       - run: bunx release-please release-pr --token ${{ secrets.GITHUB_TOKEN }} --repo-url ${{ github.repository }}
       - run: bunx release-please github-release --token ${{ secrets.GITHUB_TOKEN }} --repo-url ${{ github.repository }}
