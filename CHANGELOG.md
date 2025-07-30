@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.2.1](https://github.com/magicink/phaser-maze/compare/phaser-sandbox-v1.2.0...phaser-sandbox-v1.2.1) (2025-07-30)
+
+
+### Bug Fixes
+
+* add missing `type` attribute ([181bcdf](https://github.com/magicink/phaser-maze/commit/181bcdf4e2fde2ec8b8c70ad53a3487c349e091c))
+
 ## [1.2.0](https://github.com/magicink/phaser-maze/compare/phaser-sandbox-v1.1.0...phaser-sandbox-v1.2.0) (2025-07-10)
 
 
