@@ -1,6 +1,6 @@
 {
   "name": "phaser-sandbox",
-  "version": "1.2.0",
+  "version": "1.2.1",
   "description": "A Phaser 3 Next.js project template that demonstrates Next.js with React communication and uses Vite for bundling.",
   "keywords": [
     "phaser",
